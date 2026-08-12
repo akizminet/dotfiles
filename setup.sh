@@ -11,29 +11,19 @@ echo "🚀 Setting up dotfiles from: $DOTFILES_DIR"
 # Ensure ~/.config directory exists
 mkdir -p "$TARGET_DIR"
 
-# List of config packages to link
-PACKAGES=("sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5")
+# List of top-level config packages to link directly into ~/.config/
+PACKAGES=("sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd")
 
 for pkg in "${PACKAGES[@]}"; do
-    pkg_config="$DOTFILES_DIR/$pkg/.config"
-    if [ -d "$pkg_config" ]; then
-        echo "🔗 Linking $pkg..."
-        for item in "$pkg_config"/*; do
-            [ -e "$item" ] || continue
-            name="$(basename "$item")"
-            target="$TARGET_DIR/$name"
-            
-            # Remove existing symlink or old item if present
-            rm -rf "$target"
-            
-            # Create symbolic link pointing to dotfiles
-            ln -s "$item" "$target"
-            echo "   Linked $name -> $target"
-        done
+    pkg_dir="$DOTFILES_DIR/$pkg"
+    if [ -d "$pkg_dir" ]; then
+        target="$TARGET_DIR/$pkg"
+        echo "🔗 Linking $pkg -> $target"
+        rm -rf "$target"
+        ln -s "$pkg_dir" "$target"
     else
-        echo "⚠️ Warning: '$pkg/.config' not found in $DOTFILES_DIR, skipping."
+        echo "⚠️ Warning: '$pkg' not found in $DOTFILES_DIR, skipping."
     fi
 done
 
 echo "✅ All dotfiles successfully linked!"
-

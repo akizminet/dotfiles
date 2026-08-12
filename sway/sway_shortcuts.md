@@ -88,13 +88,13 @@ Press `Mod4 + r` to enter Resize Mode, then use the following keys:
 
 ---
 
-## 📸 Screenshots (via Grimshot)
+## 📸 Screenshots (via Flameshot)
 
-| Shortcut | Action |
-| :--- | :--- |
-| `Print` | Capture current active display output |
-| `Alt + Print` | Capture focused window |
-| `Ctrl + Print` | Select custom rectangular area to capture |
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| `Print` / `Mod4 + Shift + s` | **Flameshot GUI** | Interactive screenshot region selection |
+| `Shift + Print` | **Full Screen to Clipboard** | Capture entire screen directly to clipboard |
+| `Ctrl + Print` | **Delayed Screenshot** | Capture screen after 2-second delay |
 
 ---
 

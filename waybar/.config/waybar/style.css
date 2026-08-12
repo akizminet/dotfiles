@@ -1,0 +1,138 @@
+@import "mocha.css";
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Noto Sans", "Noto Sans Mono", sans-serif;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background-color: rgba(30, 30, 46, 0.95);
+    color: @text;
+    border-bottom: 2px solid @surface1;
+    transition-property: background-color;
+    transition-duration: .5s;
+}
+
+window#waybar.hidden {
+    opacity: 0.2;
+}
+
+#workspaces button {
+    padding: 0 10px;
+    background-color: transparent;
+    color: @subtext0;
+    border-radius: 6px;
+    margin: 3px 2px;
+}
+
+#workspaces button:hover {
+    background-color: @surface0;
+    color: @text;
+}
+
+#workspaces button.focused {
+    background-color: @blue;
+    color: @base;
+    font-weight: bold;
+}
+
+#workspaces button.urgent {
+    background-color: @red;
+    color: @base;
+}
+
+#mode {
+    background-color: @peach;
+    color: @base;
+    padding: 0 10px;
+    margin: 3px 4px;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+#clock,
+#battery,
+#cpu,
+#memory,
+#network,
+#pulseaudio,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#window {
+    padding: 0 10px;
+    margin: 3px 3px;
+    color: @text;
+    background-color: @surface0;
+    border-radius: 6px;
+}
+
+#window {
+    background-color: transparent;
+    color: @subtext1;
+    font-weight: 500;
+}
+
+#clock {
+    background-color: @surface1;
+    color: @blue;
+    font-weight: bold;
+}
+
+#battery {
+    background-color: @surface0;
+    color: @green;
+}
+
+#battery.charging, #battery.plugged {
+    color: @teal;
+}
+
+#battery.critical:not(.charging) {
+    background-color: @red;
+    color: @base;
+}
+
+#cpu {
+    color: @sapphire;
+}
+
+#memory {
+    color: @mauve;
+}
+
+#network {
+    color: @teal;
+}
+
+#pulseaudio {
+    color: @lavender;
+}
+
+#pulseaudio.muted {
+    background-color: @surface0;
+    color: @overlay0;
+}
+
+#tray {
+    background-color: @surface0;
+}
+
+#custom-power {
+    background-color: @surface0;
+    color: @red;
+    font-size: 14px;
+    padding: 0 12px;
+    margin: 3px 3px 3px 6px;
+    border-radius: 6px;
+}
+
+#custom-power:hover {
+    background-color: @red;
+    color: @base;
+}

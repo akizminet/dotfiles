@@ -22,7 +22,7 @@ listview {
 
 case "$chosen" in
     "$lock")
-        /home/phamnv/.config/sway/scripts/lock.sh
+        ~/.config/sway/scripts/lock.sh --manual
         ;;
     "$logout")
         swaymsg exit 2>/dev/null || loginctl terminate-user $USER

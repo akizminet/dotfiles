@@ -26,4 +26,17 @@ for pkg in "${PACKAGES[@]}"; do
     fi
 done
 
+# Setup individual user bin scripts and desktop files without overriding existing directories
+echo "🔗 Setting up Antigravity launcher script and desktop entry..."
+mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
+
+if [ -f "$DOTFILES_DIR/bin/antigravity-launcher.sh" ]; then
+    ln -sf "$DOTFILES_DIR/bin/antigravity-launcher.sh" "$HOME/.local/bin/antigravity-launcher.sh"
+    chmod +x "$DOTFILES_DIR/bin/antigravity-launcher.sh" "$HOME/.local/bin/antigravity-launcher.sh"
+fi
+
+if [ -f "$DOTFILES_DIR/applications/antigravity.desktop" ]; then
+    ln -sf "$DOTFILES_DIR/applications/antigravity.desktop" "$HOME/.local/share/applications/antigravity.desktop"
+fi
+
 echo "✅ All dotfiles successfully linked!"

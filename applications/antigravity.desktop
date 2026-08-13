@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Antigravity
+Comment=Experience liftoff - Agentic Platform
+Exec=/home/phamnv/.local/bin/antigravity-launcher.sh %U
+Icon=/home/phamnv/.local/share/pixmaps/antigravity.png
+Type=Application
+Terminal=false
+Categories=Development;Utility;
+StartupNotify=true
+StartupWMClass=Antigravity
+SingleMainWindow=true
+NoDisplay=false

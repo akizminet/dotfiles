@@ -39,4 +39,9 @@ if [ -f "$DOTFILES_DIR/applications/antigravity.desktop" ]; then
     ln -sf "$DOTFILES_DIR/applications/antigravity.desktop" "$HOME/.local/share/applications/antigravity.desktop"
 fi
 
+if [ -f "$DOTFILES_DIR/mimeapps.list" ]; then
+    echo "🔗 Linking mimeapps.list -> $TARGET_DIR/mimeapps.list"
+    ln -sf "$DOTFILES_DIR/mimeapps.list" "$TARGET_DIR/mimeapps.list"
+fi
+
 echo "✅ All dotfiles successfully linked!"

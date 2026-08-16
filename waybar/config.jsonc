@@ -63,12 +63,13 @@
         "format-icons": ["🔋", "🔋", "🔋"]
     },
     "network": {
-        "format-wifi": "📶 {essid}",
-        "format-ethernet": "🌐 {ipaddr}/{cidr}",
-        "tooltip-format": "🌐 {ifname} via {gwaddr}",
-        "format-linked": "🌐 {ifname} (No IP)",
+        "interval": 2,
+        "format-wifi": "📶 ⬇{bandwidthDownBytes} ⬆{bandwidthUpBytes}",
+        "format-ethernet": "🌐 ⬇{bandwidthDownBytes} ⬆{bandwidthUpBytes}",
+        "tooltip-format": "Interface: {ifname}\nIP: {ipaddr}/{cidr}\nSSID: {essid} ({signalStrength}%)\nGateway: {gwaddr}",
+        "format-linked": "⚠️ No IP",
         "format-disconnected": "⚠️ Disconnected",
-        "format-alt": "{ifname}: {ipaddr}/{cidr}"
+        "format-alt": "🌐 {ipaddr}/{cidr}"
     },
     "pulseaudio": {
         "format": "{icon} {volume}%",

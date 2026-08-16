@@ -1,9 +1,9 @@
 [Default Applications]
-text/html=my-distrobox-google-chrome.desktop
-x-scheme-handler/http=my-distrobox-google-chrome.desktop
-x-scheme-handler/https=my-distrobox-google-chrome.desktop
-x-scheme-handler/about=my-distrobox-google-chrome.desktop
-x-scheme-handler/unknown=my-distrobox-google-chrome.desktop
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
 application/xhtml+xml=my-distrobox-google-chrome.desktop
 x-scheme-handler/lmstudio=LM-Studio.desktop
 x-scheme-handler/antigravity=antigravity.desktop
@@ -35,5 +35,6 @@ application/x-xzpdf=org.gnome.Papers.desktop;
 application/illustrator=org.gnome.Papers.desktop;
 image/tiff=org.gnome.Papers.desktop;
 application/json=dev.zed.Zed.desktop;
+inode/directory=io.github.celluloid_player.Celluloid.desktop;
 
 [Removed Associations]

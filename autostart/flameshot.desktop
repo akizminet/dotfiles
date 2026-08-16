@@ -2,7 +2,7 @@
 Name=Flameshot
 Comment=Powerful yet simple-to-use screenshot software
 Icon=flameshot
-Exec=flameshot
+Exec=env QT_AUTO_SCREEN_SCALE_FACTOR=0 QT_SCREEN_SCALE_FACTORS="1;1" flameshot
 Terminal=false
 Type=Application
 X-GNOME-Autostart-enabled=true

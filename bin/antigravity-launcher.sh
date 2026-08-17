@@ -11,7 +11,7 @@ if ! flock -n 200; then
 fi
 
 # Check if antigravity process or service is already running (host or container)
-if pgrep -f "/opt/antigravity/antigravity" >/dev/null 2>&1 || \
+if pgrep -f "opt/antigravity/antigravity" >/dev/null 2>&1 || \
    pgrep -f "antigravity-ide" >/dev/null 2>&1 || \
    pgrep -x "antigravity" >/dev/null 2>&1; then
     # Antigravity is already running. Focus existing window if using Sway.
@@ -24,4 +24,12 @@ if pgrep -f "/opt/antigravity/antigravity" >/dev/null 2>&1 || \
 fi
 
 # Launch Antigravity
-exec /home/phamnv/.local/bin/antigravity "$@"
+if [ -x "$HOME/opt/antigravity/antigravity" ]; then
+    exec "$HOME/opt/antigravity/antigravity" "$@"
+elif [ -x "$HOME/.local/bin/antigravity" ]; then
+    exec "$HOME/.local/bin/antigravity" "$@"
+elif [ -x "/opt/antigravity/antigravity" ]; then
+    exec "/opt/antigravity/antigravity" "$@"
+else
+    exec antigravity "$@"
+fi

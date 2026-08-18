@@ -1,0 +1,12 @@
+[Unit]
+Description=Timer for Sway Dynamic Day/Night Wallpaper Switcher
+PartOf=graphical-session.target
+
+[Timer]
+# Run 10 seconds after user session / timer starts
+OnActiveSec=10s
+# Check every 5 minutes to catch sunrise/sunset transitions accurately
+OnUnitActiveSec=5min
+
+[Install]
+WantedBy=graphical-session.target

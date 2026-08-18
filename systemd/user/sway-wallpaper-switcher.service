@@ -1,0 +1,8 @@
+[Unit]
+Description=Switch Sway Wallpaper according to Sunrise/Sunset
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=oneshot
+ExecStart=/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh

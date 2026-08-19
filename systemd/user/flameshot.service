@@ -6,7 +6,7 @@ PartOf=graphical-session.target
 [Service]
 Environment="QT_AUTO_SCREEN_SCALE_FACTOR=0"
 Environment="QT_SCREEN_SCALE_FACTORS=1;1"
-ExecStart=%h/.local/bin/flameshot
+ExecStart=%h/.nix-profile/bin/flameshot
 Restart=on-failure
 
 [Install]

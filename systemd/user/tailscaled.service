@@ -1,0 +1,13 @@
+[Unit]
+Description=Tailscale node agent (userspace)
+Documentation=https://tailscale.com/kb/
+After=network.target
+
+[Service]
+ExecStartPre=/usr/bin/mkdir -p %h/.local/share/tailscale
+ExecStart=%h/.nix-profile/bin/tailscaled --tun=userspace-networking --state=%h/.local/share/tailscale/tailscaled.state --socket=%h/.local/share/tailscale/tailscaled.sock
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

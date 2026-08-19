@@ -35,13 +35,30 @@ if [ -f "$DOTFILES_DIR/bin/antigravity-launcher.sh" ]; then
     chmod +x "$DOTFILES_DIR/bin/antigravity-launcher.sh" "$HOME/.local/bin/antigravity-launcher.sh"
 fi
 
+if [ -f "$DOTFILES_DIR/bin/google-chrome" ]; then
+    echo "🔗 Linking google-chrome wrapper -> $HOME/.local/bin/google-chrome"
+    ln -sf "$DOTFILES_DIR/bin/google-chrome" "$HOME/.local/bin/google-chrome"
+    ln -sf "$DOTFILES_DIR/bin/google-chrome" "$HOME/.local/bin/google-chrome-stable"
+    chmod +x "$DOTFILES_DIR/bin/google-chrome"
+fi
+
 if [ -f "$DOTFILES_DIR/applications/antigravity.desktop" ]; then
     ln -sf "$DOTFILES_DIR/applications/antigravity.desktop" "$HOME/.local/share/applications/antigravity.desktop"
+fi
+
+if [ -f "$DOTFILES_DIR/applications/google-chrome.desktop" ]; then
+    echo "🔗 Linking google-chrome.desktop -> $HOME/.local/share/applications/google-chrome.desktop"
+    ln -sf "$DOTFILES_DIR/applications/google-chrome.desktop" "$HOME/.local/share/applications/google-chrome.desktop"
 fi
 
 if [ -x "$HOME/opt/antigravity/antigravity" ]; then
     echo "🔗 Linking $HOME/opt/antigravity/antigravity -> $HOME/.local/bin/antigravity"
     ln -sf "$HOME/opt/antigravity/antigravity" "$HOME/.local/bin/antigravity"
+fi
+
+if [ -x "$HOME/.nix-profile/bin/flameshot" ]; then
+    echo "🔗 Linking $HOME/.nix-profile/bin/flameshot -> $HOME/.local/bin/flameshot"
+    ln -sf "$HOME/.nix-profile/bin/flameshot" "$HOME/.local/bin/flameshot"
 fi
 
 if [ -f "$DOTFILES_DIR/mimeapps.list" ]; then

@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+# Ensure environment variables and paths for GUI / Desktop sessions
+export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$HOME/.local/bin:$PATH"
+
+# Resolve nixGL binary path explicitly
+NIXGL_CMD=""
+if [ -x "$HOME/.nix-profile/bin/nixGL" ]; then
+    NIXGL_CMD="$HOME/.nix-profile/bin/nixGL"
+elif [ -x "$HOME/.nix-profile/bin/nixGLDefault" ]; then
+    NIXGL_CMD="$HOME/.nix-profile/bin/nixGLDefault"
+elif command -v nixGL >/dev/null 2>&1; then
+    NIXGL_CMD="nixGL"
+fi
+
+# Locate actual chrome binary avoiding recursive loop in ~/.local/bin
+CHROME_BIN=""
+if [ -x "$HOME/.nix-profile/bin/google-chrome-stable" ]; then
+    CHROME_BIN="$HOME/.nix-profile/bin/google-chrome-stable"
+elif [ -x "$HOME/.nix-profile/bin/google-chrome" ]; then
+    CHROME_BIN="$HOME/.nix-profile/bin/google-chrome"
+elif [ -x "/nix/var/nix/profiles/default/bin/google-chrome-stable" ]; then
+    CHROME_BIN="/nix/var/nix/profiles/default/bin/google-chrome-stable"
+else
+    CHROME_BIN="$(which -a google-chrome-stable google-chrome 2>/dev/null | grep -v "$HOME/.local/bin" | head -n 1)"
+fi
+
+if [ -z "$CHROME_BIN" ]; then
+    echo "Error: Google Chrome binary not found." >&2
+    exit 1
+fi
+
+exec $NIXGL_CMD "$CHROME_BIN" \
+    --ozone-platform=wayland \
+    --use-gl=angle \
+    --use-angle=gl \
+    --disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan \
+    --ignore-gpu-blocklist \
+    --enable-gpu-rasterization \
+    --enable-zero-copy \
+    "$@"

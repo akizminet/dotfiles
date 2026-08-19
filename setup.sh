@@ -12,7 +12,7 @@ echo "🚀 Setting up dotfiles from: $DOTFILES_DIR"
 mkdir -p "$TARGET_DIR"
 
 # List of top-level config packages to link directly into ~/.config/
-PACKAGES=("sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd")
+PACKAGES=("sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd" "environment.d")
 
 for pkg in "${PACKAGES[@]}"; do
     pkg_dir="$DOTFILES_DIR/$pkg"
@@ -26,30 +26,28 @@ for pkg in "${PACKAGES[@]}"; do
     fi
 done
 
-# Setup individual user bin scripts and desktop files without overriding existing directories
-echo "🔗 Setting up Antigravity launcher script and desktop entry..."
+echo "🔗 Setting up desktop entries..."
 mkdir -p "$HOME/.local/bin" "$HOME/.local/share/applications"
 
-if [ -f "$DOTFILES_DIR/bin/antigravity-launcher.sh" ]; then
-    ln -sf "$DOTFILES_DIR/bin/antigravity-launcher.sh" "$HOME/.local/bin/antigravity-launcher.sh"
-    chmod +x "$DOTFILES_DIR/bin/antigravity-launcher.sh" "$HOME/.local/bin/antigravity-launcher.sh"
-fi
+for script in "$DOTFILES_DIR/bin"/*; do
+    if [ -f "$script" ]; then
+        script_name="$(basename "$script")"
+        echo "🔗 Linking $script -> $HOME/.local/bin/$script_name"
+        ln -sf "$script" "$HOME/.local/bin/$script_name"
+        chmod +x "$script" "$HOME/.local/bin/$script_name"
+    fi
+done
 
 if [ -f "$DOTFILES_DIR/bin/google-chrome" ]; then
-    echo "🔗 Linking google-chrome wrapper -> $HOME/.local/bin/google-chrome"
-    ln -sf "$DOTFILES_DIR/bin/google-chrome" "$HOME/.local/bin/google-chrome"
     ln -sf "$DOTFILES_DIR/bin/google-chrome" "$HOME/.local/bin/google-chrome-stable"
-    chmod +x "$DOTFILES_DIR/bin/google-chrome"
 fi
 
-if [ -f "$DOTFILES_DIR/applications/antigravity.desktop" ]; then
-    ln -sf "$DOTFILES_DIR/applications/antigravity.desktop" "$HOME/.local/share/applications/antigravity.desktop"
-fi
-
-if [ -f "$DOTFILES_DIR/applications/google-chrome.desktop" ]; then
-    echo "🔗 Linking google-chrome.desktop -> $HOME/.local/share/applications/google-chrome.desktop"
-    ln -sf "$DOTFILES_DIR/applications/google-chrome.desktop" "$HOME/.local/share/applications/google-chrome.desktop"
-fi
+for app in "$DOTFILES_DIR/applications"/*.desktop; do
+    if [ -f "$app" ]; then
+        echo "🔗 Linking $(basename "$app") -> $HOME/.local/share/applications/$(basename "$app")"
+        ln -sf "$app" "$HOME/.local/share/applications/$(basename "$app")"
+    fi
+done
 
 if [ -x "$HOME/opt/antigravity/antigravity" ]; then
     echo "🔗 Linking $HOME/opt/antigravity/antigravity -> $HOME/.local/bin/antigravity"

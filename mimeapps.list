@@ -4,7 +4,7 @@ x-scheme-handler/http=google-chrome.desktop
 x-scheme-handler/https=google-chrome.desktop
 x-scheme-handler/about=google-chrome.desktop
 x-scheme-handler/unknown=google-chrome.desktop
-application/xhtml+xml=my-distrobox-google-chrome.desktop
+application/xhtml+xml=google-chrome.desktop
 x-scheme-handler/lmstudio=LM-Studio.desktop
 x-scheme-handler/antigravity=antigravity.desktop
 x-scheme-handler/antigravity-ide=antigravity-ide.desktop
@@ -12,10 +12,10 @@ application/json=dev.zed.Zed.desktop
 x-scheme-handler/jetbrains=jetbrainsd.desktop
 
 [Added Associations]
-x-scheme-handler/http=my-distrobox-google-chrome.desktop;com.google.Chrome.desktop;
-application/xhtml+xml=my-distrobox-google-chrome.desktop;com.google.Chrome.desktop;
-text/html=my-distrobox-google-chrome.desktop;com.google.Chrome.desktop;
-x-scheme-handler/https=my-distrobox-google-chrome.desktop;com.google.Chrome.desktop;
+x-scheme-handler/http=google-chrome.desktop;com.google.Chrome.desktop;
+application/xhtml+xml=google-chrome.desktop;com.google.Chrome.desktop;
+text/html=google-chrome.desktop;com.google.Chrome.desktop;
+x-scheme-handler/https=google-chrome.desktop;com.google.Chrome.desktop;
 application/vnd.comicbook-rar=org.gnome.Papers.desktop;
 application/vnd.comicbook+zip=org.gnome.Papers.desktop;
 application/x-cb7=org.gnome.Papers.desktop;

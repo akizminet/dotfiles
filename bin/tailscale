@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# User-level socket location
+DEFAULT_SOCKET="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/tailscale/tailscaled.sock"
+
+# Check if --socket was already passed in arguments
+HAS_SOCKET_ARG=0
+for arg in "$@"; do
+    if [[ "$arg" == --socket* ]]; then
+        HAS_SOCKET_ARG=1
+        break
+    fi
+done
+
+if [ "$HAS_SOCKET_ARG" -eq 0 ] && [ -S "$DEFAULT_SOCKET" ]; then
+    exec /var/home/phamnv/.nix-profile/bin/tailscale --socket="$DEFAULT_SOCKET" "$@"
+else
+    exec /var/home/phamnv/.nix-profile/bin/tailscale "$@"
+fi

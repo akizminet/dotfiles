@@ -1,26 +1,12 @@
 #!/usr/bin/env bash
-# Launcher script for Antigravity with single-instance and background service conflict protection
+# Launcher script for Antigravity with Sway single-instance focus handling
 
-LOCKFILE="${XDG_RUNTIME_DIR:-/tmp}/antigravity-launcher.lock"
-
-# Use file descriptor 200 for flock to prevent rapid multi-click race conditions
-exec 200>"$LOCKFILE"
-if ! flock -n 200; then
-    # Another launcher instance is currently starting up, exit cleanly
-    exit 0
-fi
-
-# Check if antigravity process or service is already running (host or container)
-if pgrep -f "opt/antigravity/antigravity" >/dev/null 2>&1 || \
-   pgrep -f "antigravity-ide" >/dev/null 2>&1 || \
-   pgrep -x "antigravity" >/dev/null 2>&1; then
-    # Antigravity is already running. Focus existing window if using Sway.
-    if command -v swaymsg >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
-        swaymsg '[app_id="(?i)antigravity"] focus' >/dev/null 2>&1 || \
-        swaymsg '[class="(?i)antigravity"] focus' >/dev/null 2>&1 || \
-        swaymsg '[title="(?i)antigravity"] focus' >/dev/null 2>&1
+# If Antigravity window is already open in Sway, bring it to focus
+if command -v swaymsg >/dev/null 2>&1 && [ -n "${WAYLAND_DISPLAY:-}" ]; then
+    if swaymsg '[app_id="(?i)^antigravity$"] focus' >/dev/null 2>&1 || \
+       swaymsg '[class="(?i)^antigravity$"] focus' >/dev/null 2>&1; then
+        exit 0
     fi
-    exit 0
 fi
 
 # Launch Antigravity

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=NetworkManager OpenVPN SSO User Agent
+Comment=Listens for OpenVPN SSO authentication URLs and opens the default browser
+Exec=/usr/local/bin/nm-openvpn-sso-user-agent
+Icon=network-vpn
+Terminal=false
+NoDisplay=true
+X-GNOME-Autostart-enabled=true
+Hidden=true

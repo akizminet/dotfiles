@@ -64,4 +64,14 @@ if [ -f "$DOTFILES_DIR/mimeapps.list" ]; then
     ln -sf "$DOTFILES_DIR/mimeapps.list" "$TARGET_DIR/mimeapps.list"
 fi
 
+# Link host system fonts to ~/.local/share/fonts for Nix apps & containers
+echo "🔗 Setting up fonts in ~/.local/share/fonts..."
+mkdir -p "$HOME/.local/share/fonts"
+if [ -d "/usr/share/fonts" ]; then
+    ln -sfn "/usr/share/fonts" "$HOME/.local/share/fonts/system"
+fi
+if command -v fc-cache >/dev/null 2>&1; then
+    fc-cache -f "$HOME/.local/share/fonts" >/dev/null 2>&1 || true
+fi
+
 echo "✅ All dotfiles successfully linked!"

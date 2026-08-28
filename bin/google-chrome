@@ -5,10 +5,16 @@ export PATH="$HOME/.nix-profile/bin:/nix/var/nix/profiles/default/bin:$HOME/.loc
 
 # Resolve nixGL binary path explicitly
 NIXGL_CMD=""
-if [ -x "$HOME/.nix-profile/bin/nixGL" ]; then
-    NIXGL_CMD="$HOME/.nix-profile/bin/nixGL"
+if [ -x "$HOME/.nix-profile/bin/nixGLIntel" ]; then
+    NIXGL_CMD="$HOME/.nix-profile/bin/nixGLIntel"
 elif [ -x "$HOME/.nix-profile/bin/nixGLDefault" ]; then
     NIXGL_CMD="$HOME/.nix-profile/bin/nixGLDefault"
+elif [ -x "$HOME/.nix-profile/bin/nixGL" ]; then
+    NIXGL_CMD="$HOME/.nix-profile/bin/nixGL"
+elif command -v nixGLIntel >/dev/null 2>&1; then
+    NIXGL_CMD="nixGLIntel"
+elif command -v nixGLDefault >/dev/null 2>&1; then
+    NIXGL_CMD="nixGLDefault"
 elif command -v nixGL >/dev/null 2>&1; then
     NIXGL_CMD="nixGL"
 fi
@@ -32,8 +38,7 @@ fi
 
 exec $NIXGL_CMD "$CHROME_BIN" \
     --ozone-platform=wayland \
-    --use-gl=angle \
-    --use-angle=gl \
+    --enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoDecoder,CanvasOopRasterization \
     --disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan \
     --ignore-gpu-blocklist \
     --enable-gpu-rasterization \

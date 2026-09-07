@@ -86,6 +86,7 @@
             # CLI & Network Tools
             pkgs.ffmpeg-full
             pkgs.gh
+            pkgs.google-cloud-sdk
             tailscaleWrapped
             pkgs.wayvnc
             pkgs.zapret

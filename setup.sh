@@ -59,6 +59,14 @@ if [ -x "$HOME/.nix-profile/bin/flameshot" ]; then
     ln -sf "$HOME/.nix-profile/bin/flameshot" "$HOME/.local/bin/flameshot"
 fi
 
+if [ -d "$HOME/.nix-profile/share/icons" ]; then
+    echo "🔗 Linking Nix profile icons into ~/.local/share/icons..."
+    mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"
+    for icon in "$HOME/.nix-profile/share/icons/hicolor/scalable/apps/"*.svg; do
+        [ -e "$icon" ] && ln -sf "$icon" "$HOME/.local/share/icons/hicolor/scalable/apps/"
+    done
+fi
+
 if [ -f "$DOTFILES_DIR/mimeapps.list" ]; then
     echo "🔗 Linking mimeapps.list -> $TARGET_DIR/mimeapps.list"
     ln -sf "$DOTFILES_DIR/mimeapps.list" "$TARGET_DIR/mimeapps.list"

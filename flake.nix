@@ -23,6 +23,55 @@
           pkgs.fcitx5-bamboo
         ];
       };
+
+      googleChromeWrapped = pkgs.symlinkJoin {
+        name = "google-chrome-wrapped";
+        paths = [ pkgs.google-chrome ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/google-chrome $out/bin/google-chrome-stable
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/google-chrome-stable" \
+            --add-flags "${pkgs.google-chrome}/bin/google-chrome-stable" \
+            --add-flags "--ozone-platform=wayland" \
+            --add-flags "--enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoDecoder,CanvasOopRasterization" \
+            --add-flags "--disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan" \
+            --add-flags "--ignore-gpu-blocklist" \
+            --add-flags "--enable-gpu-rasterization" \
+            --add-flags "--enable-zero-copy"
+          ln -s $out/bin/google-chrome-stable $out/bin/google-chrome
+
+          rm -f $out/share/applications/google-chrome.desktop
+          mkdir -p $out/share/applications
+          sed "s|Exec=${pkgs.google-chrome}/bin/google-chrome-stable|Exec=$out/bin/google-chrome-stable|g" \
+            ${pkgs.google-chrome}/share/applications/google-chrome.desktop > $out/share/applications/google-chrome.desktop
+        '';
+      };
+
+      tailscaleBin = pkgs.writeShellScriptBin "tailscale" ''
+        SOCKET="''${XDG_RUNTIME_DIR:-/run/user/$UID}/tailscale/tailscaled.sock"
+        if [[ "$*" != *--socket* ]] && [ -S "$SOCKET" ]; then
+          exec "${pkgs.tailscale}/bin/tailscale" --socket="$SOCKET" "$@"
+        else
+          exec "${pkgs.tailscale}/bin/tailscale" "$@"
+        fi
+      '';
+
+      tailscaleWrapped = pkgs.symlinkJoin {
+        name = "tailscale-wrapped";
+        paths = [ tailscaleBin pkgs.tailscale ];
+      };
+
+      flameshotWrapped = pkgs.symlinkJoin {
+        name = "flameshot-wrapped";
+        paths = [ pkgs.flameshot ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/flameshot
+          makeWrapper "${pkgs.flameshot}/bin/flameshot" "$out/bin/flameshot" \
+            --set QT_AUTO_SCREEN_SCALE_FACTOR 0 \
+            --set QT_SCREEN_SCALE_FACTORS "1;1"
+        '';
+      };
     in
     {
       packages.${system} = {
@@ -30,14 +79,14 @@
           name = "default-profile";
           paths = [
             # GUI & Desktop Applications
-            pkgs.google-chrome
+            googleChromeWrapped
             pkgs.libreoffice
-            pkgs.flameshot
+            flameshotWrapped
 
             # CLI & Network Tools
             pkgs.ffmpeg-full
             pkgs.gh
-            pkgs.tailscale
+            tailscaleWrapped
             pkgs.wayvnc
             pkgs.zapret
 

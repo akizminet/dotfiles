@@ -38,10 +38,6 @@ for script in "$DOTFILES_DIR/bin"/*; do
     fi
 done
 
-if [ -f "$DOTFILES_DIR/bin/google-chrome" ]; then
-    ln -sf "$DOTFILES_DIR/bin/google-chrome" "$HOME/.local/bin/google-chrome-stable"
-fi
-
 for app in "$DOTFILES_DIR/applications"/*.desktop; do
     if [ -f "$app" ]; then
         echo "🔗 Linking $(basename "$app") -> $HOME/.local/share/applications/$(basename "$app")"
@@ -52,11 +48,6 @@ done
 if [ -x "$HOME/opt/antigravity/antigravity" ]; then
     echo "🔗 Linking $HOME/opt/antigravity/antigravity -> $HOME/.local/bin/antigravity"
     ln -sf "$HOME/opt/antigravity/antigravity" "$HOME/.local/bin/antigravity"
-fi
-
-if [ -x "$HOME/.nix-profile/bin/flameshot" ]; then
-    echo "🔗 Linking $HOME/.nix-profile/bin/flameshot -> $HOME/.local/bin/flameshot"
-    ln -sf "$HOME/.nix-profile/bin/flameshot" "$HOME/.local/bin/flameshot"
 fi
 
 if [ -d "$HOME/.nix-profile/share/icons" ]; then

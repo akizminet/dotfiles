@@ -22,10 +22,15 @@ fi
 
 # Ensure HYPRLAND_INSTANCE_SIGNATURE is available even when called from systemd user timer
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-    HYPR_SIG=$(find "/run/user/${UID}/hypr" "/tmp/hypr" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1 | xargs -r basename)
-    if [[ -n "${HYPR_SIG}" ]]; then
-        export HYPRLAND_INSTANCE_SIGNATURE="${HYPR_SIG}"
-    fi
+    for dir in "/run/user/${UID}/hypr" "/tmp/hypr"; do
+        if [[ -d "${dir}" ]]; then
+            HYPR_SIG=$(find "${dir}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1 | xargs -r basename || true)
+            if [[ -n "${HYPR_SIG}" ]]; then
+                export HYPRLAND_INSTANCE_SIGNATURE="${HYPR_SIG}"
+                break
+            fi
+        fi
+    done
 fi
 
 apply_wallpaper() {

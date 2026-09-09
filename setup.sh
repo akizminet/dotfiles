@@ -12,7 +12,7 @@ echo "🚀 Setting up dotfiles from: $DOTFILES_DIR"
 mkdir -p "$TARGET_DIR"
 
 # List of top-level config packages to link directly into ~/.config/
-PACKAGES=("sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd" "environment.d")
+PACKAGES=("hypr" "sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd" "environment.d")
 
 for pkg in "${PACKAGES[@]}"; do
     pkg_dir="$DOTFILES_DIR/$pkg"

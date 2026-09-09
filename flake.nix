@@ -72,12 +72,82 @@
             --set QT_SCREEN_SCALE_FACTORS "1;1"
         '';
       };
+
+      hyprlandWrapped = pkgs.symlinkJoin {
+        name = "hyprland-wrapped";
+        paths = [ pkgs.hyprland ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/Hyprland $out/bin/hyprland $out/bin/start-hyprland
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/start-hyprland" \
+            --add-flags "${pkgs.hyprland}/bin/start-hyprland" \
+            --add-flags "--no-nixgl" \
+            --add-flags "--path" \
+            --add-flags "${pkgs.hyprland}/bin/Hyprland" \
+            --prefix __EGL_VENDOR_LIBRARY_DIRS : "${pkgs.mesa}/share/glvnd/egl_vendor.d" \
+            --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
+            --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
+
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/Hyprland" \
+            --add-flags "${pkgs.hyprland}/bin/start-hyprland" \
+            --add-flags "--no-nixgl" \
+            --add-flags "--path" \
+            --add-flags "${pkgs.hyprland}/bin/Hyprland" \
+            --prefix __EGL_VENDOR_LIBRARY_DIRS : "${pkgs.mesa}/share/glvnd/egl_vendor.d" \
+            --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
+            --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
+          ln -s $out/bin/Hyprland $out/bin/hyprland
+        '';
+      };
+
+      hyprpaperWrapped = pkgs.symlinkJoin {
+        name = "hyprpaper-wrapped";
+        paths = [ pkgs.hyprpaper ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/hyprpaper
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/hyprpaper" \
+            --add-flags "${pkgs.hyprpaper}/bin/hyprpaper" \
+            --prefix __EGL_VENDOR_LIBRARY_DIRS : "${pkgs.mesa}/share/glvnd/egl_vendor.d" \
+            --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
+            --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
+        '';
+      };
+
+      hyprlockWrapped = pkgs.symlinkJoin {
+        name = "hyprlock-wrapped";
+        paths = [ pkgs.hyprlock ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/hyprlock
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/hyprlock" \
+            --add-flags "${pkgs.hyprlock}/bin/hyprlock" \
+            --prefix __EGL_VENDOR_LIBRARY_DIRS : "${pkgs.mesa}/share/glvnd/egl_vendor.d" \
+            --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
+            --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
+        '';
+      };
     in
     {
       packages.${system} = {
         default = pkgs.buildEnv {
           name = "default-profile";
           paths = [
+            # Desktop Environment & Wayland Compositors
+            hyprlandWrapped
+            pkgs.hyprland-qtutils
+            hyprpaperWrapped
+            pkgs.hypridle
+            hyprlockWrapped
+            pkgs.xdg-desktop-portal-hyprland
+            pkgs.sway
+            pkgs.waybar
+            pkgs.rofi
+            pkgs.foot
+            pkgs.wl-clipboard
+            pkgs.mako
+            pkgs.libnotify
+
             # GUI & Desktop Applications
             googleChromeWrapped
             pkgs.libreoffice

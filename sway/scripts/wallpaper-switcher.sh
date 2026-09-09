@@ -20,11 +20,35 @@ if [[ -z "${SWAYSOCK:-}" ]]; then
     fi
 fi
 
+# Ensure HYPRLAND_INSTANCE_SIGNATURE is available even when called from systemd user timer
+if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+    HYPR_SIG=$(find "/run/user/${UID}/hypr" "/tmp/hypr" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1 | xargs -r basename)
+    if [[ -n "${HYPR_SIG}" ]]; then
+        export HYPRLAND_INSTANCE_SIGNATURE="${HYPR_SIG}"
+    fi
+fi
+
 apply_wallpaper() {
     local mode="$1"
     local wallpaper="$2"
-    if command -v swaymsg >/dev/null 2>&1; then
-        swaymsg "output * bg '${wallpaper}' fill" >/dev/null 2>&1 || true
+    local applied=0
+
+    # Sway support
+    if command -v swaymsg >/dev/null 2>&1 && [[ -n "${SWAYSOCK:-}" ]]; then
+        if swaymsg "output * bg '${wallpaper}' fill" >/dev/null 2>&1; then
+            applied=1
+        fi
+    fi
+
+    # Hyprland support via hyprpaper
+    if command -v hyprctl >/dev/null 2>&1; then
+        hyprctl hyprpaper preload "${wallpaper}" >/dev/null 2>&1 || true
+        if hyprctl hyprpaper wallpaper ",${wallpaper}" >/dev/null 2>&1; then
+            applied=1
+        fi
+    fi
+
+    if [[ "${applied}" -eq 1 ]]; then
         echo "${mode}" > "${STATE_FILE}"
         echo "Applied ${mode} wallpaper: ${wallpaper}"
     fi

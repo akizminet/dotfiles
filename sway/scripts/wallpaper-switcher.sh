@@ -46,8 +46,15 @@ apply_wallpaper() {
     fi
 
     # Hyprland support via hyprpaper
-    if command -v hyprctl >/dev/null 2>&1; then
-        hyprctl hyprpaper preload "${wallpaper}" >/dev/null 2>&1 || true
+    if command -v hyprctl >/dev/null 2>&1 && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+        local sock_path="/run/user/${UID}/hypr/${HYPRLAND_INSTANCE_SIGNATURE}/.hyprpaper.sock"
+        for _ in {1..25}; do
+            if [[ -S "${sock_path}" ]]; then
+                break
+            fi
+            sleep 0.1
+        done
+
         if hyprctl hyprpaper wallpaper ",${wallpaper}" >/dev/null 2>&1; then
             applied=1
         fi
@@ -155,10 +162,18 @@ case "${ACTION}" in
             TARGET_WALLPAPER="${NIGHT_WALLPAPER}"
         fi
 
-        # Check if already in this mode
+        # Check if already in this mode and currently applied
         if [[ -f "${STATE_FILE}" ]]; then
             CURRENT_MODE=$(cat "${STATE_FILE}" 2>/dev/null || true)
             if [[ "${CURRENT_MODE}" == "${MODE}" ]]; then
+                # In Hyprland, verify it is actually active
+                if command -v hyprctl >/dev/null 2>&1 && [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
+                    target_name=$(basename "${TARGET_WALLPAPER}")
+                    if ! hyprctl hyprpaper listactive 2>/dev/null | grep -q "${target_name}"; then
+                        apply_wallpaper "${MODE}" "${TARGET_WALLPAPER}"
+                        exit 0
+                    fi
+                fi
                 exit 0
             fi
         fi

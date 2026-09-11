@@ -22,7 +22,7 @@ hl.env("WLR_RENDERER_ALLOW_SOFTWARE", "1")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 hl.env("PATH", (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin")
-hl.env("XDG_DATA_DIRS", (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/share:/usr/local/share:/usr/share")
+hl.env("XDG_DATA_DIRS", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:" .. (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/share:/usr/local/share:/usr/share")
 
 ---------------------
 ---- MY PROGRAMS ----
@@ -35,11 +35,13 @@ local menu     = "rofi -show combi -combi-modes drun,run -modes combi"
 -------------------
 hl.on("hyprland.start", function ()
     hl.exec_cmd("waybar")
-    hl.exec_cmd("mako")
+    hl.exec_cmd("swaync")
     hl.exec_cmd("fcitx5 -d")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("hyprpaper")
-    hl.exec_cmd("/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh")
+    hl.exec_cmd("/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh --force")
+    hl.exec_cmd("systemctl --user start sway-wallpaper-switcher.timer")
+    hl.exec_cmd("systemctl --user start flameshot")
 end)
 
 ---------------
@@ -89,6 +91,9 @@ hl.config({
         disable_hyprland_logo   = true,
         disable_splash_rendering = true,
         force_default_wallpaper = 0,
+        mouse_move_enables_dpms = true,
+        key_press_enables_dpms  = true,
+        focus_on_activate       = true,
     },
 })
 
@@ -114,6 +119,13 @@ hl.bind(mainMod .. " + Q",         hl.dsp.window.close())
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = 0 }))
+hl.bind(mainMod .. " + N",         hl.dsp.exec_cmd("swaync-client -t -sw"))
+
+-- Screenshot (Flameshot)
+hl.bind("Print",                   hl.dsp.exec_cmd("flameshot gui"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("flameshot gui"))
+hl.bind("SHIFT + Print",           hl.dsp.exec_cmd("flameshot full -c"))
+hl.bind("CTRL + Print",            hl.dsp.exec_cmd("flameshot gui --delay 2000"))
 
 -- Focus navigation (arrows and hjkl)
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -144,3 +156,16 @@ end
 -- Mouse window control
 hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
 hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+
+--------------------------------
+---- WINDOWS AND WORKSPACES ----
+--------------------------------
+hl.window_rule({
+    name        = "flameshot-overlay",
+    match       = { class = "(?i)flameshot" },
+    float       = true,
+    move        = "0 0",
+    pin         = true,
+    border_size = 0,
+    no_anim     = true,
+})

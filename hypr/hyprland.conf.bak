@@ -13,7 +13,7 @@ env = WLR_RENDERER_ALLOW_SOFTWARE,1
 
 # Ensure Nix profile paths are loaded
 env = PATH,$HOME/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin
-env = XDG_DATA_DIRS,$HOME/.nix-profile/share:/usr/local/share:/usr/share
+env = XDG_DATA_DIRS,$HOME/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:$HOME/.nix-profile/share:/usr/local/share:/usr/share
 
 # Autostart
 exec-once = waybar

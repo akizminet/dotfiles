@@ -21,7 +21,7 @@ hl.env("WLR_NO_HARDWARE_CURSORS", "1")
 hl.env("WLR_RENDERER_ALLOW_SOFTWARE", "1")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("PATH", (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin")
+hl.env("PATH", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/bin:" .. (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin")
 hl.env("XDG_DATA_DIRS", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:" .. (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/share:/usr/local/share:/usr/share")
 
 ---------------------

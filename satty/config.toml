@@ -1,0 +1,40 @@
+[general]
+# Start Satty in windowed mode by default (use --fullscreen for full screen annotation)
+fullscreen = false
+
+# Try to enforce floating in tiling window managers (Hyprland, Sway)
+floating-hack = true
+
+# Exit directly after copy/save action
+early-exit = ["all"]
+
+# Roundness of rectangle corners (0 for sharp corners)
+corner-roundness = 0
+
+# Initial active tool
+initial-tool = "brush"
+
+# Command to pipe copied image data to
+copy-command = "wl-copy"
+
+# Annotation size factor
+annotation-size-factor = 2
+
+# Default output file pattern when saving screenshots
+output-filename = "~/Pictures/Screenshots/screenshot-%Y-%m-%d_%H:%M:%S.png"
+
+# Save to file automatically after copying
+save-after-copy = false
+
+# Show toolbars by default
+default-hide-toolbars = false
+
+# Primary highlighter mode ("block" or "freehand")
+primary-highlighter = "block"
+
+# Notifications
+disable-notifications = false
+
+# Key actions
+actions-on-enter = ["save-to-clipboard"]
+actions-on-escape = ["exit"]

@@ -12,7 +12,7 @@ echo "🚀 Setting up dotfiles from: $DOTFILES_DIR"
 mkdir -p "$TARGET_DIR"
 
 # List of top-level config packages to link directly into ~/.config/
-PACKAGES=("hypr" "sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "flameshot" "autostart" "systemd" "environment.d")
+PACKAGES=("hypr" "sway" "waybar" "rofi" "foot" "gtk-3.0" "fcitx5" "satty" "autostart" "systemd" "environment.d")
 
 for pkg in "${PACKAGES[@]}"; do
     pkg_dir="$DOTFILES_DIR/$pkg"
@@ -56,6 +56,15 @@ if [ -d "$HOME/.nix-profile/share/icons" ]; then
     for icon in "$HOME/.nix-profile/share/icons/hicolor/scalable/apps/"*.svg; do
         [ -e "$icon" ] && ln -sf "$icon" "$HOME/.local/share/icons/hicolor/scalable/apps/"
     done
+fi
+
+if [ -d "$HOME/.nix-profile/lib/systemd/user" ]; then
+    echo "🔗 Linking Nix profile user systemd units..."
+    mkdir -p "$HOME/.local/share/systemd"
+    ln -sfn "$HOME/.nix-profile/lib/systemd/user" "$HOME/.local/share/systemd/user"
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user daemon-reload || true
+    fi
 fi
 
 if [ -f "$DOTFILES_DIR/mimeapps.list" ]; then

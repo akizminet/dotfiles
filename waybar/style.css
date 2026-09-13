@@ -64,6 +64,7 @@ window#waybar.hidden {
 #mode,
 #idle_inhibitor,
 #scratchpad,
+#custom-notification,
 #window {
     padding: 0 10px;
     margin: 3px 3px;
@@ -121,6 +122,18 @@ window#waybar.hidden {
 
 #tray {
     background-color: @surface0;
+}
+
+#custom-notification {
+    background-color: @surface0;
+    color: @text;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+}
+
+#custom-notification:hover {
+    background-color: @surface1;
 }
 
 #custom-power {

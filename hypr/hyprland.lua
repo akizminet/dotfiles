@@ -41,7 +41,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("hyprpaper")
     hl.exec_cmd("/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh --force")
     hl.exec_cmd("systemctl --user start sway-wallpaper-switcher.timer")
-    hl.exec_cmd("systemctl --user start flameshot")
+    hl.exec_cmd("systemctl --user start polkit-gnome.service")
 end)
 
 ---------------
@@ -93,7 +93,7 @@ hl.config({
         force_default_wallpaper = 0,
         mouse_move_enables_dpms = true,
         key_press_enables_dpms  = true,
-        focus_on_activate       = true,
+        focus_on_activate       = false,
     },
 })
 
@@ -121,11 +121,17 @@ hl.bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = 0 }))
 hl.bind(mainMod .. " + N",         hl.dsp.exec_cmd("swaync-client -t -sw"))
 
--- Screenshot (Flameshot)
-hl.bind("Print",                   hl.dsp.exec_cmd("flameshot gui"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("flameshot gui"))
-hl.bind("SHIFT + Print",           hl.dsp.exec_cmd("flameshot full -c"))
-hl.bind("CTRL + Print",            hl.dsp.exec_cmd("flameshot gui --delay 2000"))
+-- Screenshot (Satty)
+hl.bind("Print",                   hl.dsp.exec_cmd("screenshot region"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("screenshot region"))
+hl.bind("SHIFT + Print",           hl.dsp.exec_cmd("screenshot full"))
+hl.bind("CTRL + Print",            hl.dsp.exec_cmd("screenshot delay 2"))
+
+-- Audio & Volume (WirePlumber)
+hl.bind("XF86AudioRaiseVolume",    hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true })
+hl.bind("XF86AudioLowerVolume",    hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"),        { locked = true })
+hl.bind("XF86AudioMute",           hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"),       { locked = true })
+hl.bind("XF86AudioMicMute",        hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"),     { locked = true })
 
 -- Focus navigation (arrows and hjkl)
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
@@ -161,11 +167,7 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 ---- WINDOWS AND WORKSPACES ----
 --------------------------------
 hl.window_rule({
-    name        = "flameshot-overlay",
-    match       = { class = "(?i)flameshot" },
-    float       = true,
-    move        = "0 0",
-    pin         = true,
-    border_size = 0,
-    no_anim     = true,
+    name  = "satty-floating",
+    match = { class = "(?i)satty" },
+    float = true,
 })

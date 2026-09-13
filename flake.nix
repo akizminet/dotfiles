@@ -78,20 +78,38 @@
         paths = [ tailscaleBin pkgs.tailscale ];
       };
 
-      flameshotWrapped = pkgs.symlinkJoin {
-        name = "flameshot-wrapped";
-        paths = [ pkgs.flameshot ];
+      thunarWithPlugins = pkgs.thunar.override {
+        thunarPlugins = [
+          pkgs.thunar-archive-plugin
+          pkgs.thunar-volman
+        ];
+      };
+
+      thunarWrapped = pkgs.symlinkJoin {
+        name = "thunar-wrapped";
+        paths = [ thunarWithPlugins ];
         buildInputs = [ pkgs.makeBinaryWrapper ];
         postBuild = ''
-          rm -f $out/bin/flameshot
-          makeWrapper "${pkgs.flameshot}/bin/flameshot" "$out/bin/flameshot" \
-            --set QT_AUTO_SCREEN_SCALE_FACTOR 0 \
-            --set QT_SCREEN_SCALE_FACTORS "1;1"
+          wrapProgram "$out/bin/thunar" \
+            --prefix GIO_EXTRA_MODULES : "${pkgs.gvfs}/lib/gio/modules" \
+            --prefix XDG_DATA_DIRS : "${pkgs.gvfs}/share:$out/share"
+        '';
+      };
 
-          rm -f $out/share/applications/org.flameshot.Flameshot.desktop
-          mkdir -p $out/share/applications
-          sed "s|Exec=${pkgs.flameshot}/bin/flameshot|Exec=$out/bin/flameshot|g" \
-            ${pkgs.flameshot}/share/applications/org.flameshot.Flameshot.desktop > $out/share/applications/org.flameshot.Flameshot.desktop
+      polkitPatched = pkgs.runCommand "polkit-patched" { } ''
+        mkdir -p $out/lib
+        cp -a ${pkgs.polkit.out}/lib/libpolkit-agent-1.so* $out/lib/
+        chmod +w $out/lib/libpolkit-agent-1.so.0.0.0
+        sed -i 's|/run/wrappers/bin/polkit-agent-helper-1|/usr/lib/polkit-1/polkit-agent-helper-1|g' $out/lib/libpolkit-agent-1.so.0.0.0
+      '';
+
+      polkitGnomeWrapped = pkgs.symlinkJoin {
+        name = "polkit-gnome-wrapped";
+        paths = [ pkgs.polkit_gnome ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          wrapProgram "$out/libexec/polkit-gnome-authentication-agent-1" \
+            --prefix LD_LIBRARY_PATH : "${polkitPatched}/lib"
         '';
       };
 
@@ -169,17 +187,25 @@
             pkgs.wl-clipboard
             pkgs.swaynotificationcenter
             pkgs.libnotify
+            polkitGnomeWrapped
 
             # GUI & Desktop Applications
             googleChromeWrapped
             firefoxWrapped
             pkgs.libreoffice
-            flameshotWrapped
+            pkgs.satty
+            pkgs.grim
+            pkgs.slurp
+            thunarWrapped
+            pkgs.tumbler
+            pkgs.xarchiver
+            pkgs.gvfs
 
             # CLI & Network Tools
             pkgs.ffmpeg-full
             pkgs.gh
             pkgs.google-cloud-sdk
+            pkgs.openvpn
             tailscaleWrapped
             pkgs.wayvnc
             pkgs.zapret
@@ -195,7 +221,9 @@
           ];
         };
 
-        flameshot = flameshotWrapped;
+        thunar = thunarWrapped;
+        openvpn = pkgs.openvpn;
+        satty = pkgs.satty;
         firefox = firefoxWrapped;
         fcitx5 = fcitx5WithAddons;
         fcitx5-with-addons = fcitx5WithAddons;

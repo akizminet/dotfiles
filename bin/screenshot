@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Screenshot helper script for Wayland (Satty + Grim + Slurp)
+
+notify() {
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send "Screenshot" "$1" -a "Screenshot"
+    fi
+}
+
+check_dependencies() {
+    local missing=()
+    for cmd in grim slurp satty wl-copy; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            missing+=("$cmd")
+        fi
+    done
+
+    if [ ${#missing[@]} -gt 0 ]; then
+        notify "Error: Missing required tools: ${missing[*]}"
+        echo "Error: Missing required tools: ${missing[*]}" >&2
+        exit 1
+    fi
+}
+
+take_region() {
+    check_dependencies
+    local geometry
+    if ! geometry=$(slurp 2>/dev/null); then
+        # Selection was cancelled by user
+        exit 0
+    fi
+
+    if [ -z "$geometry" ]; then
+        exit 0
+    fi
+
+    grim -g "$geometry" - | satty --filename -
+}
+
+take_full_clipboard() {
+    check_dependencies
+    grim - | wl-copy
+    notify "Full screen copied to clipboard"
+}
+
+take_full_edit() {
+    check_dependencies
+    grim - | satty --filename - --fullscreen
+}
+
+MODE="${1:-region}"
+
+case "$MODE" in
+    region|gui)
+        take_region
+        ;;
+    full|fullscreen)
+        take_full_clipboard
+        ;;
+    full-edit)
+        take_full_edit
+        ;;
+    delay)
+        SEC="${2:-2}"
+        sleep "$SEC"
+        take_region
+        ;;
+    -h|--help|help)
+        echo "Usage: $(basename "$0") [region|full|full-edit|delay [seconds]]"
+        echo ""
+        echo "Modes:"
+        echo "  region, gui   Interactive region selection annotated with Satty (default)"
+        echo "  full          Capture full screen directly to clipboard"
+        echo "  full-edit     Capture full screen and open with Satty"
+        echo "  delay [N]     Wait N seconds (default: 2) before interactive region selection"
+        ;;
+    *)
+        echo "Unknown mode: $MODE" >&2
+        echo "Usage: $(basename "$0") [region|full|full-edit|delay [seconds]]" >&2
+        exit 1
+        ;;
+esac

@@ -4,9 +4,9 @@
     "height": 34,
     "spacing": 4,
     "modules-left": [
-        "sway/workspaces",
-        "sway/mode",
-        "sway/window"
+        "hyprland/workspaces",
+        "hyprland/submap",
+        "hyprland/window"
     ],
     "modules-center": [
         "clock"
@@ -21,15 +21,16 @@
         "custom/notification",
         "custom/power"
     ],
-    "sway/workspaces": {
+    "hyprland/workspaces": {
         "disable-scroll": true,
         "all-outputs": false,
-        "format": "{name}"
+        "format": "{name}",
+        "on-click": "activate"
     },
-    "sway/mode": {
+    "hyprland/submap": {
         "format": "<span style=\"italic\">{}</span>"
     },
-    "sway/window": {
+    "hyprland/window": {
         "format": "{}",
         "max-length": 50,
         "rewrite": {

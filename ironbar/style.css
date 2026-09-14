@@ -1,0 +1,270 @@
+@define-color base   #1e1e2e;
+@define-color mantle #181825;
+@define-color crust  #11111b;
+
+@define-color text     #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color subtext1 #bac2de;
+
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+
+@define-color overlay0 #6c7086;
+@define-color overlay1 #7f849c;
+@define-color overlay2 #9399b2;
+
+@define-color blue      #89b4fa;
+@define-color lavender  #b4befe;
+@define-color sapphire  #74c7ec;
+@define-color sky       #89dceb;
+@define-color teal      #94e2d5;
+@define-color green     #a6e3a1;
+@define-color yellow    #f9e2af;
+@define-color peach     #fab387;
+@define-color maroon    #eba0ac;
+@define-color red       #f38ba8;
+@define-color mauve     #cba6f7;
+@define-color pink      #f5c2e7;
+@define-color flamingo  #f2cdcd;
+@define-color rosewater #f5e0dc;
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "Noto Sans", "Noto Sans Mono", sans-serif;
+    font-size: 13px;
+    min-height: 0;
+    box-shadow: none;
+    color: @text;
+}
+
+button {
+    color: @text;
+    background-image: none;
+    background-color: transparent;
+    box-shadow: none;
+    border: none;
+    outline: none;
+}
+
+window, .bar {
+    background-color: rgba(30, 30, 46, 0.95);
+    color: @text;
+    border-bottom: 2px solid @surface1;
+}
+
+.workspaces button,
+.workspaces .item {
+    padding: 0 10px;
+    background-image: none;
+    background-color: transparent;
+    color: @subtext0;
+    border-radius: 6px;
+    margin: 3px 2px;
+}
+
+.workspaces button:hover,
+.workspaces .item:hover {
+    background-color: @surface0;
+    color: @text;
+}
+
+.workspaces button.focused,
+.workspaces button.visible,
+.workspaces button.active,
+.workspaces button.current,
+.workspaces .item.focused,
+.workspaces .item.visible,
+.workspaces .item.active,
+.workspaces .item.current {
+    background-image: none;
+    background-color: @blue;
+    color: @base;
+    font-weight: bold;
+}
+
+.workspaces button.urgent,
+.workspaces .item.urgent {
+    background-image: none;
+    background-color: @red;
+    color: @base;
+}
+
+.focused {
+    background-color: transparent;
+    color: @subtext1;
+    font-weight: 500;
+    padding: 0 10px;
+    margin: 3px 3px;
+}
+
+.clock,
+.clock button {
+    background-image: none;
+    background-color: @surface1;
+    color: @blue;
+    font-weight: bold;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+}
+
+.volume {
+    background-color: @surface0;
+    color: @lavender;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+}
+
+.sysinfo {
+    margin: 3px 3px;
+}
+
+.sysinfo .item {
+    background-color: @surface0;
+    color: @sapphire;
+    padding: 0 10px;
+    margin: 0 2px;
+    border-radius: 6px;
+}
+
+.sysinfo .item:nth-child(2) {
+    color: @mauve;
+}
+
+.sysinfo .item:nth-child(3) {
+    color: @teal;
+}
+
+.tray {
+    background-color: @surface0;
+    color: @text;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+}
+
+.tray button,
+.tray .item,
+.tray image {
+    color: @text;
+    background-color: transparent;
+}
+
+#notification button,
+#notification_btn {
+    background-image: none;
+    background-color: @surface0;
+    color: @text;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+}
+
+#notification button:hover,
+#notification_btn:hover {
+    background-color: @surface1;
+}
+
+#power button,
+#power_btn {
+    background-image: none;
+    background-color: @surface0;
+    color: @red;
+    font-size: 14px;
+    padding: 0 12px;
+    margin: 3px 3px 3px 6px;
+    border-radius: 6px;
+}
+
+#power button:hover,
+#power_btn:hover {
+    background-color: @red;
+    color: @base;
+}
+
+/* --- Popups & Calendar --- */
+popover,
+popover contents {
+    background-color: @base;
+    color: @text;
+    border: 1px solid @surface1;
+    border-radius: 12px;
+    padding: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.popup {
+    padding: 6px;
+}
+
+.calendar-clock {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: @blue;
+    margin-bottom: 8px;
+}
+
+calendar {
+    background-color: transparent;
+    color: @text;
+    border: none;
+}
+
+calendar header {
+    color: @text;
+    border-bottom: 1px solid @surface1;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+}
+
+calendar header button {
+    color: @text;
+    background-color: @surface0;
+    border-radius: 6px;
+    padding: 2px 6px;
+}
+
+calendar header button:hover {
+    background-color: @surface1;
+}
+
+calendar grid {
+    color: @subtext0;
+}
+
+calendar grid label.day-name {
+    color: @lavender;
+    font-weight: bold;
+    padding: 4px 6px;
+}
+
+calendar grid label.day {
+    color: @text;
+    border-radius: 6px;
+    padding: 4px 6px;
+}
+
+calendar grid label.day:hover {
+    background-color: @surface0;
+}
+
+calendar grid label.day:selected,
+calendar grid label.day.selected {
+    background-color: @blue;
+    color: @base;
+    font-weight: bold;
+}
+
+calendar .today {
+    background-color: @surface1;
+    color: @peach;
+    font-weight: bold;
+    border-radius: 6px;
+}
+
+calendar .other-month {
+    color: @overlay0;
+}

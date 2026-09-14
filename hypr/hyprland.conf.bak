@@ -16,7 +16,7 @@ env = PATH,$HOME/.nix-profile/bin:/usr/local/bin:/usr/bin:/bin
 env = XDG_DATA_DIRS,$HOME/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:$HOME/.nix-profile/share:/usr/local/share:/usr/share
 
 # Autostart
-exec-once = waybar
+exec-once = ironbar
 exec-once = mako
 exec-once = fcitx5 -d
 

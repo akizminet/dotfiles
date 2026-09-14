@@ -1,0 +1,52 @@
+name: main
+anchor_to_edges: true
+position: top
+height: 34
+popup_autohide: true
+
+start:
+  - type: workspaces
+    all_monitors: false
+    sort: name
+  - type: focused
+    show_icon: false
+    truncate:
+      mode: end
+      max_len: 50
+
+center:
+  - type: clock
+    name: clock
+    format: "🕒 %H:%M:%S"
+
+end:
+  - type: volume
+    format: "{icon} {percentage}%"
+    max_volume: 150
+    icons:
+      volume_high: "🔊"
+      volume_medium: "🔊"
+      volume_low: "🔊"
+      muted: "🔇"
+  - type: sys_info
+    interval: 2
+    format:
+      - "💻 {cpu_percent}%"
+      - "🧠 {memory_used#Gi:.1}GiB"
+      - "🌐 ⬇{net_down#k:.0}k ⬆{net_up#k:.0}k"
+  - type: tray
+  - type: custom
+    name: notification
+    bar:
+      - type: button
+        name: notification_btn
+        label: "🔔"
+        on_click_left: "swaync-client -t -sw"
+        on_click_right: "swaync-client -d -sw"
+  - type: custom
+    name: power
+    bar:
+      - type: button
+        name: power_btn
+        label: "⏻"
+        on_click_left: "/var/home/phamnv/.config/rofi/powermenu.sh"

@@ -5,9 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixgl.url = "github:nix-community/nixGL";
     nixgl.inputs.nixpkgs.follows = "nixpkgs";
+    ironbar.url = "github:JakeStanger/ironbar";
+    ironbar.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixgl }:
+  outputs = { self, nixpkgs, nixgl, ironbar }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -181,7 +183,7 @@
             hyprlockWrapped
             pkgs.xdg-desktop-portal-hyprland
             pkgs.sway
-            pkgs.waybar
+            ironbar.packages.${system}.default
             pkgs.rofi
             pkgs.foot
             pkgs.wl-clipboard

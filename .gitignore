@@ -1,0 +1,17 @@
+# Fcitx5 runtime layout cache
+fcitx5/conf/cached_layouts
+
+# Backup and temporary files
+*.bak
+*.disabled
+*.old
+*~
+*.orig
+*.swp
+*.swo
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.direnv/
+.devenv/

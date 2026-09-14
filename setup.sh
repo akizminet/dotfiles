@@ -45,6 +45,9 @@ for app in "$DOTFILES_DIR/applications"/*.desktop; do
     fi
 done
 
+# Prune dangling symlinks pointing into dotfiles
+find "$HOME/.local/bin" "$HOME/.local/share/applications" -xtype l -lname "$DOTFILES_DIR/*" -delete 2>/dev/null || true
+
 if [ -x "$HOME/opt/antigravity/antigravity" ]; then
     echo "🔗 Linking $HOME/opt/antigravity/antigravity -> $HOME/.local/bin/antigravity"
     ln -sf "$HOME/opt/antigravity/antigravity" "$HOME/.local/bin/antigravity"

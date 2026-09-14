@@ -35,12 +35,25 @@
 
 ## 🚚 Window Movement
 
-| Shortcut | Action |
-| :--- | :--- |
-| `SUPER + Shift + Left` / `SUPER + Shift + h` | Move window Left |
-| `SUPER + Shift + Down` / `SUPER + Shift + j` | Move window Down |
-| `SUPER + Shift + Up` / `SUPER + Shift + k` | Move window Up |
-| `SUPER + Shift + Right` / `SUPER + Shift + l` | Move window Right |
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| `SUPER + Shift + Left` / `SUPER + Shift + h` | Move window Left | Moves window left (group-aware: merges in / pops out) |
+| `SUPER + Shift + Down` / `SUPER + Shift + j` | Move window Down | Moves window down (group-aware: merges in / pops out) |
+| `SUPER + Shift + Up` / `SUPER + Shift + k` | Move window Up | Moves window up (group-aware: merges in / pops out) |
+| `SUPER + Shift + Right` / `SUPER + Shift + l` | Move window Right | Moves window right (group-aware: merges in / pops out) |
+
+---
+
+## 📑 Window Groups (Tabbed / Stacked)
+
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| `SUPER + g` | **Toggle Group** | Turns focused window into a group or dissolves it |
+| `SUPER + Shift + g` | **Lock Group** | Locks active group from automatically accepting windows |
+| `SUPER + Tab` | **Next Tab** | Switch to the next window in the group |
+| `SUPER + Shift + Tab` | **Previous Tab** | Switch to the previous window in the group |
+| `SUPER + Ctrl + Left` / `SUPER + Ctrl + h` | **Move Tab Left** | Reorder current window tab to the left |
+| `SUPER + Ctrl + Right` / `SUPER + Ctrl + l` | **Move Tab Right** | Reorder current window tab to the right |
 
 ---
 

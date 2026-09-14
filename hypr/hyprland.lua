@@ -95,6 +95,24 @@ hl.config({
         key_press_enables_dpms  = true,
         focus_on_activate       = false,
     },
+
+    group = {
+        col = {
+            border_active   = { colors = { "rgba(89b4faff)", "rgba(cba6f7ff)" }, angle = 45 },
+            border_inactive = "rgba(313244aa)",
+        },
+        groupbar = {
+            enabled       = true,
+            font_size     = 10,
+            gradients     = true,
+            render_titles = true,
+            scrolling     = true,
+            col = {
+                active   = "rgba(89b4faee)",
+                inactive = "rgba(31324488)",
+            },
+        },
+    },
 })
 
 -- Curves & Animations
@@ -119,7 +137,13 @@ hl.bind(mainMod .. " + Q",         hl.dsp.window.close())
 hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = 0 }))
+hl.bind(mainMod .. " + G",         hl.dsp.group.toggle())
+hl.bind(mainMod .. " + SHIFT + G", hl.dsp.group.lock_active())
 hl.bind(mainMod .. " + N",         hl.dsp.exec_cmd("swaync-client -t -sw"))
+
+-- Group tab navigation
+hl.bind(mainMod .. " + Tab",         hl.dsp.group.next())
+hl.bind(mainMod .. " + SHIFT + Tab", hl.dsp.group.prev())
 
 -- Screenshot (Satty)
 hl.bind("Print",                   hl.dsp.exec_cmd("screenshot region"))
@@ -143,15 +167,21 @@ hl.bind(mainMod .. " + l",     hl.dsp.focus({ direction = "right" }))
 hl.bind(mainMod .. " + k",     hl.dsp.focus({ direction = "up" }))
 hl.bind(mainMod .. " + j",     hl.dsp.focus({ direction = "down" }))
 
--- Move windows
-hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.move({ direction = "left" }))
-hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right" }))
-hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up" }))
-hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down" }))
-hl.bind(mainMod .. " + SHIFT + h",     hl.dsp.window.move({ direction = "left" }))
-hl.bind(mainMod .. " + SHIFT + l",     hl.dsp.window.move({ direction = "right" }))
-hl.bind(mainMod .. " + SHIFT + k",     hl.dsp.window.move({ direction = "up" }))
-hl.bind(mainMod .. " + SHIFT + j",     hl.dsp.window.move({ direction = "down" }))
+-- Move windows (group-aware: moves into/out of groups seamlessly)
+hl.bind(mainMod .. " + SHIFT + left",  hl.dsp.window.move({ direction = "left",  group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + right", hl.dsp.window.move({ direction = "right", group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + up",    hl.dsp.window.move({ direction = "up",    group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + down",  hl.dsp.window.move({ direction = "down",  group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + h",     hl.dsp.window.move({ direction = "left",  group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + l",     hl.dsp.window.move({ direction = "right", group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + k",     hl.dsp.window.move({ direction = "up",    group_aware = true }))
+hl.bind(mainMod .. " + SHIFT + j",     hl.dsp.window.move({ direction = "down",  group_aware = true }))
+
+-- Reorder window inside group tabs
+hl.bind(mainMod .. " + CTRL + left",  hl.dsp.group.move_window({ forward = false }))
+hl.bind(mainMod .. " + CTRL + right", hl.dsp.group.move_window({ forward = true }))
+hl.bind(mainMod .. " + CTRL + h",     hl.dsp.group.move_window({ forward = false }))
+hl.bind(mainMod .. " + CTRL + l",     hl.dsp.group.move_window({ forward = true }))
 
 -- Switch workspaces & move active window (1-9)
 for i = 1, 9 do

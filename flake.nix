@@ -207,6 +207,8 @@
             pkgs.ffmpeg-full
             pkgs.gh
             pkgs.google-cloud-sdk
+            pkgs.kubernetes-helm
+            pkgs.kubectl
             pkgs.openvpn
             tailscaleWrapped
             pkgs.wayvnc
@@ -229,6 +231,8 @@
         firefox = firefoxWrapped;
         fcitx5 = fcitx5WithAddons;
         fcitx5-with-addons = fcitx5WithAddons;
+        helm = pkgs.kubernetes-helm;
+        kubectl = pkgs.kubectl;
       };
     };
 }

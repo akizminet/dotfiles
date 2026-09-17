@@ -42,6 +42,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh --force")
     hl.exec_cmd("systemctl --user start sway-wallpaper-switcher.timer")
     hl.exec_cmd("systemctl --user start polkit-gnome.service")
+    hl.exec_cmd("systemctl --user start nm-openvpn-sso-user-agent.service")
 end)
 
 ---------------

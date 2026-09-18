@@ -210,6 +210,7 @@
             pkgs.kubernetes-helm
             pkgs.kubectl
             pkgs.openvpn
+            pkgs.ripgrep
             tailscaleWrapped
             pkgs.wayvnc
             pkgs.zapret

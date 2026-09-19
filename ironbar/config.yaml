@@ -28,6 +28,8 @@ end:
       volume_medium: "🔊"
       volume_low: "🔊"
       muted: "🔇"
+    on_scroll_up: "wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
+    on_scroll_down: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   - type: sys_info
     interval: 2
     format:

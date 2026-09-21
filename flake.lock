@@ -57,11 +57,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1789459171,
-        "narHash": "sha256-CjdYBKEny2Zio4hyruPxVZ5uqePlgJ9gtpEuddD9qwA=",
+        "lastModified": 1789921577,
+        "narHash": "sha256-WkLFTOfRDe1MInpPlp5dK4cQIucFRDAwpxAvAZb7KYs=",
         "owner": "JakeStanger",
         "repo": "ironbar",
-        "rev": "157d4f6eb8bb34b10d681a55cdb275206f8dbf1b",
+        "rev": "ecc4163b2aea234c0bc87a16965887aa4c58806d",
         "type": "github"
       },
       "original": {
@@ -93,11 +93,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1789684949,
-        "narHash": "sha256-ZKhUe/2IJUq1JhKxKMu8rbkgSGmPP2ZCqlIPn40aGCM=",
+        "lastModified": 1789785513,
+        "narHash": "sha256-B44WL6h0XoLjJ41bUPJk0X5SDinLCII//6EcBLXKiJ0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "e554fab72f81915600f3f449b786fd9af40439a5",
+        "rev": "20b1ddd1aa5ace70c9468305030aa4f9ef79671b",
         "type": "github"
       },
       "original": {

@@ -37,6 +37,6 @@ application/x-xzpdf=org.gnome.Papers.desktop;
 application/illustrator=org.gnome.Papers.desktop;
 image/tiff=org.gnome.Papers.desktop;
 application/json=dev.zed.Zed.desktop;
-inode/directory=thunar.desktop;
+inode/directory=io.github.celluloid_player.Celluloid.desktop;thunar.desktop;
 
 [Removed Associations]

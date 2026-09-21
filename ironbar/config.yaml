@@ -23,6 +23,8 @@ end:
   - type: volume
     format: "{icon} {percentage}%"
     max_volume: 150
+    sink_slider_orientation: horizontal
+    source_slider_orientation: horizontal
     icons:
       volume_high: "🔊"
       volume_medium: "🔊"
@@ -35,7 +37,7 @@ end:
     format:
       - "💻 {cpu_percent}%"
       - "🧠 {memory_used#Gi:.1}GiB"
-      - "🌐 ⬇{net_down#k:.0}k ⬆{net_up#k:.0}k"
+      - "🌐 ⬇{net_down#M:.1}M ⬆{net_up#M:.1}M"
   - type: tray
   - type: custom
     name: notification

@@ -32,7 +32,7 @@
 * {
     border: none;
     border-radius: 0;
-    font-family: "Noto Sans", "Noto Sans Mono", sans-serif;
+    font-family: "Noto Sans", "MonaspiceNe Nerd Font", "Noto Color Emoji", sans-serif;
     font-size: 13px;
     min-height: 0;
     box-shadow: none;
@@ -186,18 +186,199 @@ window, .bar {
 }
 
 /* --- Popups & Calendar --- */
-popover,
+popover {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
 popover contents {
     background-color: @base;
     color: @text;
     border: 1px solid @surface1;
     border-radius: 12px;
     padding: 10px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 .popup {
     padding: 6px;
+}
+
+/* --- Volume Popup --- */
+.popup-volume {
+    padding: 2px;
+    min-width: 280px;
+}
+
+.popup-volume .device-box {
+    margin: 0;
+}
+
+.popup-volume .sink-box,
+.popup-volume .source-box {
+    background-color: alpha(@surface0, 0.45);
+    border: 1px solid @surface1;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.popup-volume .sink-box {
+    border-left: 3px solid @blue;
+}
+
+.popup-volume .source-box {
+    border-left: 3px solid @mauve;
+    margin-bottom: 0;
+}
+
+.popup-volume .device-selector {
+    background-color: @surface0;
+    border: 1px solid @surface1;
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: @text;
+    font-weight: 600;
+}
+
+.popup-volume .device-selector:hover {
+    background-color: @surface1;
+    border-color: @overlay0;
+}
+
+.popup-volume .device-selector popover contents {
+    background-color: @mantle;
+    border: 1px solid @surface1;
+    border-radius: 8px;
+    padding: 6px;
+}
+
+.popup-volume .device-selector listview row {
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: @text;
+}
+
+.popup-volume .device-selector listview row:selected,
+.popup-volume .device-selector listview row:hover {
+    background-color: @surface0;
+    color: @blue;
+}
+
+/* Sliders */
+.popup-volume scale.horizontal {
+    margin: 8px 0;
+    min-height: 24px;
+}
+
+.popup-volume scale.horizontal trough {
+    background-color: @surface1;
+    border-radius: 5px;
+    min-height: 8px;
+    min-width: 220px;
+}
+
+.popup-volume .sink-slider trough highlight {
+    background-color: @blue;
+    border-radius: 6px;
+}
+
+.popup-volume .source-slider trough highlight {
+    background-color: @mauve;
+    border-radius: 6px;
+}
+
+.popup-volume scale.horizontal slider {
+    background-color: @text;
+    border: 3px solid @base;
+    border-radius: 50%;
+    min-width: 18px;
+    min-height: 18px;
+    margin: -5px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.popup-volume scale.horizontal slider:hover {
+    background-color: @rosewater;
+    border-color: @surface0;
+}
+
+/* Vertical slider support */
+.popup-volume scale.vertical {
+    margin: 8px 0;
+}
+
+.popup-volume scale.vertical trough {
+    background-color: @surface0;
+    border-radius: 8px;
+    min-width: 24px;
+    min-height: 100px;
+}
+
+.popup-volume scale.vertical trough highlight {
+    background-color: @blue;
+    border-radius: 8px;
+    min-width: 24px;
+}
+
+.popup-volume .source-slider.vertical trough highlight {
+    background-color: @mauve;
+}
+
+.popup-volume scale.vertical slider {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Mute button */
+.popup-volume .btn-mute {
+    background-color: @surface0;
+    border: 1px solid @surface1;
+    color: @text;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 15px;
+    margin: 4px 0 0 0;
+}
+
+.popup-volume .btn-mute label {
+    font-size: 16px;
+    font-family: "MonaspiceNe Nerd Font", "Noto Color Emoji", sans-serif;
+}
+
+.popup-volume .btn-mute:hover {
+    background-color: @surface1;
+    border-color: @overlay0;
+}
+
+.popup-volume .btn-mute:checked {
+    background-color: alpha(@red, 0.25);
+    border-color: @red;
+    color: @red;
+}
+
+/* App volumes */
+.popup-volume .apps-box {
+    margin-top: 6px;
+}
+
+.popup-volume .apps-box .app-box {
+    background-color: alpha(@surface0, 0.45);
+    border: 1px solid @surface1;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 6px;
+}
+
+.popup-volume .apps-box .app-box .title {
+    font-weight: bold;
+    color: @subtext1;
+    margin-bottom: 4px;
 }
 
 .calendar-clock {

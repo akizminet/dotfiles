@@ -34,6 +34,9 @@ local menu     = "rofi -show combi -combi-modes drun,run -modes combi"
 ---- AUTOSTART ----
 -------------------
 hl.on("hyprland.start", function ()
+    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    hl.exec_cmd("systemctl --user start hyprland-session.target")
+    hl.exec_cmd("systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal")
     hl.exec_cmd("ironbar")
     hl.exec_cmd("swaync")
     hl.exec_cmd("fcitx5 -d")

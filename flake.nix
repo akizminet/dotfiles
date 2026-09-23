@@ -35,7 +35,7 @@
           makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/google-chrome-stable" \
             --add-flags "${pkgs.google-chrome}/bin/google-chrome-stable" \
             --add-flags "--ozone-platform=wayland" \
-            --add-flags "--enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoDecoder,CanvasOopRasterization" \
+            --add-flags "--enable-features=VaapiVideoDecodeLinuxGL,VaapiVideoDecoder,CanvasOopRasterization,WebRTCPipeWireCapturer" \
             --add-flags "--disable-features=Vulkan,VulkanFromANGLE,DefaultANGLEVulkan" \
             --add-flags "--ignore-gpu-blocklist" \
             --add-flags "--enable-gpu-rasterization" \

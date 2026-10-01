@@ -15,3 +15,6 @@ fcitx5/conf/cached_layouts
 Thumbs.db
 .direnv/
 .devenv/
+
+# Dynamic wallpaper symlink
+sway/wallpapers/current-wallpaper.jpg

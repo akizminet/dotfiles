@@ -7,7 +7,10 @@ if pgrep -xu "$USER" -x swaylock >/dev/null 2>&1; then
     exit 0
 fi
 
-WALLPAPER="$HOME/.config/sway/wallpapers/ghibli-midnight-station.jpg"
+WALLPAPER="$HOME/.config/sway/wallpapers/current-wallpaper.jpg"
+if [ ! -f "$WALLPAPER" ]; then
+    WALLPAPER="$HOME/.config/sway/wallpapers/ghibli-starship-night-citylights.jpg"
+fi
 
 LOCK_ARGS=(
     -f

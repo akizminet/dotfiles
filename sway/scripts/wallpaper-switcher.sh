@@ -4,8 +4,8 @@
 set -euo pipefail
 
 WALLPAPER_DIR="/var/home/phamnv/.config/sway/wallpapers"
-DAY_WALLPAPER="${WALLPAPER_DIR}/ghibli-day-station.jpg"
-NIGHT_WALLPAPER="${WALLPAPER_DIR}/ghibli-midnight-station.jpg"
+DAY_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-day.jpg"
+NIGHT_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-night-citylights.jpg"
 STATE_FILE="/tmp/sway_wallpaper_mode_${UID}"
 
 # Coordinates for Vietnam (Ho Chi Minh City / Hanoi approx: 10.82N, 106.63E)
@@ -64,6 +64,9 @@ apply_wallpaper() {
         echo "${mode}" > "${STATE_FILE}"
         echo "Applied ${mode} wallpaper: ${wallpaper}"
     fi
+
+    # Update current wallpaper symlink for lock screens (hyprlock, swaylock)
+    ln -sf "${wallpaper}" "${WALLPAPER_DIR}/current-wallpaper.jpg"
 }
 
 calc_solar_mode() {
@@ -161,6 +164,9 @@ case "${ACTION}" in
         if [[ "${MODE}" == "night" ]]; then
             TARGET_WALLPAPER="${NIGHT_WALLPAPER}"
         fi
+
+        # Always ensure lockscreen symlink points to target wallpaper
+        ln -sf "${TARGET_WALLPAPER}" "${WALLPAPER_DIR}/current-wallpaper.jpg"
 
         # Check if already in this mode and currently applied
         if [[ -f "${STATE_FILE}" ]]; then

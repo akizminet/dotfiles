@@ -48,8 +48,12 @@ button {
     outline: none;
 }
 
-window, .bar {
-    background-color: rgba(30, 30, 46, 0.95);
+window, .background {
+    background-color: transparent;
+}
+
+.bar, #bar {
+    background-color: alpha(@base, 0.93);
     color: @text;
     border-bottom: 2px solid @surface1;
 }

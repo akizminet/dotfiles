@@ -202,6 +202,7 @@
             pkgs.gvfs
 
             # CLI & Network Tools
+            pkgs.binutils
             pkgs.ffmpeg-full
             pkgs.gh
             pkgs.google-cloud-sdk

@@ -206,6 +206,7 @@
             pkgs.ffmpeg-full
             pkgs.gh
             pkgs.google-cloud-sdk
+            pkgs.inetutils
             pkgs.kubernetes-helm
             pkgs.kubectl
             pkgs.openvpn

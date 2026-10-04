@@ -74,6 +74,8 @@ hl.config({
             inactive_border = "rgba(313244aa)",
         },
         layout = "dwindle",
+        resize_on_border = true,
+        extend_border_grab_area = 15,
     },
 
     decoration = {

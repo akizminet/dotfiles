@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "celluloid-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1785557557,
+        "narHash": "sha256-BnALeHtO0/y2wd7oAvkp3Vk2MXbV7uRqJoYpPgMza08=",
+        "ref": "refs/heads/master",
+        "rev": "e54b8b1cb073738e537332b18f548f5a6d83aa5c",
+        "revCount": 1893,
+        "type": "git",
+        "url": "file:///var/home/phamnv/dev/workstation/celluloid"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///var/home/phamnv/dev/workstation/celluloid"
+      }
+    },
     "fenix": {
       "inputs": {
         "nixpkgs": [
@@ -157,6 +173,7 @@
     },
     "root": {
       "inputs": {
+        "celluloid-src": "celluloid-src",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs",
         "nmrs-gui": "nmrs-gui"

@@ -11,6 +11,7 @@ x-scheme-handler/antigravity-ide=antigravity-ide.desktop
 application/json=dev.zed.Zed.desktop
 x-scheme-handler/jetbrains=jetbrainsd.desktop
 inode/directory=thunar.desktop
+video/x-matroska=io.github.celluloid_player.Celluloid.desktop
 
 [Added Associations]
 x-scheme-handler/http=google-chrome.desktop;com.google.Chrome.desktop;firefox.desktop;
@@ -38,5 +39,6 @@ application/illustrator=org.gnome.Papers.desktop;
 image/tiff=org.gnome.Papers.desktop;
 application/json=dev.zed.Zed.desktop;
 inode/directory=io.github.celluloid_player.Celluloid.desktop;thunar.desktop;
+video/x-matroska=userapp-celluloid-A6TUW3.desktop;io.github.celluloid_player.Celluloid.desktop;
 
 [Removed Associations]

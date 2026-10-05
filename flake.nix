@@ -7,9 +7,13 @@
     nixgl.inputs.nixpkgs.follows = "nixpkgs";
     nmrs-gui.url = "github:networkmanager-rs/nmrs-gui";
     nmrs-gui.inputs.nixpkgs.follows = "nixpkgs";
+    celluloid-src = {
+      url = "git+file:///var/home/phamnv/dev/workstation/celluloid";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, nixgl, nmrs-gui }:
+  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -63,6 +67,28 @@
           mkdir -p $out/share/applications
           sed "s|Exec=firefox|Exec=$out/bin/firefox|g" \
             ${pkgs.firefox}/share/applications/firefox.desktop > $out/share/applications/firefox.desktop
+        '';
+      };
+
+      celluloidCustom = pkgs.celluloid.overrideAttrs (old: {
+        src = celluloid-src;
+        buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.ffmpeg ];
+        doCheck = false;
+      });
+
+      celluloidWrapped = pkgs.symlinkJoin {
+        name = "celluloid-wrapped";
+        paths = [ celluloidCustom ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/celluloid
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/celluloid" \
+            --add-flags "${celluloidCustom}/bin/celluloid"
+
+          rm -f $out/share/applications/io.github.celluloid_player.Celluloid.desktop
+          mkdir -p $out/share/applications
+          sed "s|Exec=celluloid|Exec=$out/bin/celluloid|g" \
+            ${celluloidCustom}/share/applications/io.github.celluloid_player.Celluloid.desktop > $out/share/applications/io.github.celluloid_player.Celluloid.desktop
         '';
       };
 
@@ -194,6 +220,7 @@
             # GUI & Desktop Applications
             googleChromeWrapped
             firefoxWrapped
+            celluloidWrapped
             pkgs.libreoffice
             pkgs.satty
             pkgs.grim
@@ -230,6 +257,7 @@
         };
 
         nmrs-gui = nmrs-gui.packages.${system}.default;
+        celluloid = celluloidWrapped;
         thunar = thunarWrapped;
         openvpn = pkgs.openvpn;
         satty = pkgs.satty;

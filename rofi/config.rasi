@@ -1,12 +1,14 @@
 configuration {
-    modi: "drun,run,window";
+    modes: "drun,run,window";
     icon-theme: "Papirus";
     show-icons: true;
     terminal: "foot";
     drun-display-format: "{icon} {name}";
+    drun-match-fields: "name,generic,categories,keywords";
     location: 0;
     disable-history: false;
     sort: true;
+    sorting-method: "fzf";
     hide-scrollbar: true;
     display-drun: " 🔍 Apps ";
     display-run: " 🏃 Run ";

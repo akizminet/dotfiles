@@ -9,7 +9,8 @@
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | `Mod4 + Return` | **Open Terminal** | Spawns `foot` terminal emulator |
-| `Mod4 + d` | **Application Launcher** | Opens `rofi` launcher menu |
+| `Mod4 + d` | **Application Launcher** | Opens `rofi` application (drun) menu |
+| `Mod4 + Shift + d` | **Run Command** | Opens `rofi` command (run) dialog |
 | `Mod4 + Shift + q` | **Kill Window** | Closes the focused window |
 | `Mod4 + Shift + c` | **Reload Config** | Reloads Sway configuration files live |
 | `Mod4 + Shift + e` | **Exit Sway** | Prompts to exit the Sway Wayland session |

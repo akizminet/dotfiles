@@ -28,7 +28,7 @@ hl.env("XDG_DATA_DIRS", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/sh
 ---- MY PROGRAMS ----
 ---------------------
 local terminal = "foot"
-local menu     = "rofi -show combi -combi-modes drun,run -modes combi"
+local menu     = "rofi -show drun"
 
 -------------------
 ---- AUTOSTART ----
@@ -137,6 +137,7 @@ local mainMod = "SUPER"
 -- Applications & Windows
 hl.bind(mainMod .. " + Return",    hl.dsp.exec_cmd(terminal))
 hl.bind(mainMod .. " + D",         hl.dsp.exec_cmd(menu))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("rofi -show run"))
 hl.bind(mainMod .. " + L",         hl.dsp.exec_cmd("hyprlock"))
 hl.bind(mainMod .. " + SHIFT + L", hl.dsp.dpms("off"))
 hl.bind(mainMod .. " + Q",         hl.dsp.window.close())

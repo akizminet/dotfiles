@@ -9,7 +9,8 @@
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
 | `SUPER + Return` | **Open Terminal** | Spawns `foot` terminal emulator |
-| `SUPER + d` | **Application Launcher** | Opens `rofi` run/drun menu |
+| `SUPER + d` | **Application Launcher** | Opens `rofi` application (drun) menu |
+| `SUPER + Shift + d` | **Run Command** | Opens `rofi` command (run) dialog |
 | `SUPER + q` | **Kill Window** | Closes the focused window |
 | `SUPER + Shift + e` | **Exit Hyprland** | Exits the Hyprland Wayland session |
 | `SUPER + v` | **Toggle Floating** | Toggles window between tiling & floating |

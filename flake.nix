@@ -5,9 +5,11 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixgl.url = "github:nix-community/nixGL";
     nixgl.inputs.nixpkgs.follows = "nixpkgs";
+    nmrs-gui.url = "github:networkmanager-rs/nmrs-gui";
+    nmrs-gui.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixgl }:
+  outputs = { self, nixpkgs, nixgl, nmrs-gui }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -200,6 +202,7 @@
             pkgs.tumbler
             pkgs.xarchiver
             pkgs.gvfs
+            nmrs-gui.packages.${system}.default
 
             # CLI & Network Tools
             pkgs.binutils
@@ -226,6 +229,7 @@
           ];
         };
 
+        nmrs-gui = nmrs-gui.packages.${system}.default;
         thunar = thunarWrapped;
         openvpn = pkgs.openvpn;
         satty = pkgs.satty;

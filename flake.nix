@@ -230,6 +230,7 @@
             thunarWrapped
             pkgs.tumbler
             pkgs.xarchiver
+            pkgs.peazip
             pkgs.gvfs
             nmrs-gui.packages.${system}.default
             akquick.packages.${system}.default
@@ -270,6 +271,7 @@
         fcitx5-with-addons = fcitx5WithAddons;
         helm = pkgs.kubernetes-helm;
         kubectl = pkgs.kubectl;
+        peazip = pkgs.peazip;
       };
     };
 }

@@ -59,6 +59,10 @@ if [ -d "$HOME/.nix-profile/share/icons" ]; then
     for icon in "$HOME/.nix-profile/share/icons/hicolor/scalable/apps/"*.svg; do
         [ -e "$icon" ] && ln -sf "$icon" "$HOME/.local/share/icons/hicolor/scalable/apps/"
     done
+    mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
+    for icon in "$HOME/.nix-profile/share/icons/hicolor/256x256/apps/"*.png; do
+        [ -e "$icon" ] && ln -sf "$icon" "$HOME/.local/share/icons/hicolor/256x256/apps/"
+    done
 fi
 
 if [ -d "$HOME/.nix-profile/lib/systemd/user" ]; then

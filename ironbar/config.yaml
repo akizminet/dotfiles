@@ -40,6 +40,14 @@ end:
       - "🌐 ⬇{net_down#M:.1}M ⬆{net_up#M:.1}M"
   - type: tray
   - type: custom
+    name: quicksettings
+    bar:
+      - type: button
+        name: quicksettings_btn
+        label: "󱂬"
+        on_click_left: "akquick -t"
+        on_click_right: "akquick -p wifi"
+  - type: custom
     name: notification
     bar:
       - type: button

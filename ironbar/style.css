@@ -157,6 +157,23 @@ window, .background {
     background-color: transparent;
 }
 
+#quicksettings button,
+#quicksettings_btn {
+    background-image: none;
+    background-color: @surface0;
+    color: @text;
+    padding: 0 10px;
+    margin: 3px 3px;
+    border-radius: 6px;
+    font-size: 15px;
+}
+
+#quicksettings button:hover,
+#quicksettings_btn:hover {
+    background-color: @surface1;
+    color: @blue;
+}
+
 #notification button,
 #notification_btn {
     background-image: none;

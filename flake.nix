@@ -8,12 +8,14 @@
     nmrs-gui.url = "github:networkmanager-rs/nmrs-gui";
     nmrs-gui.inputs.nixpkgs.follows = "nixpkgs";
     celluloid-src = {
-      url = "git+file:///var/home/phamnv/dev/workstation/celluloid";
+      url = "git+ssh://git@github.com/akizminet/akcelluloid.git";
       flake = false;
     };
+    akquick.url = "github:akizminet/akquick";
+    akquick.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src }:
+  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src, akquick }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -230,6 +232,7 @@
             pkgs.xarchiver
             pkgs.gvfs
             nmrs-gui.packages.${system}.default
+            akquick.packages.${system}.default
 
             # CLI & Network Tools
             pkgs.binutils
@@ -257,6 +260,7 @@
         };
 
         nmrs-gui = nmrs-gui.packages.${system}.default;
+        akquick = akquick.packages.${system}.default;
         celluloid = celluloidWrapped;
         thunar = thunarWrapped;
         openvpn = pkgs.openvpn;

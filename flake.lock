@@ -1,5 +1,26 @@
 {
   "nodes": {
+    "akquick": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791254045,
+        "narHash": "sha256-WWZfJpWc+ewuVNqiTI4NfJN+wYYxowzTW5YmW+e83EQ=",
+        "owner": "akizminet",
+        "repo": "akquick",
+        "rev": "b21157f2d5c20553c65390b7754de5de8cda6b3b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "akizminet",
+        "repo": "akquick",
+        "type": "github"
+      }
+    },
     "celluloid-src": {
       "flake": false,
       "locked": {
@@ -9,11 +30,11 @@
         "rev": "e54b8b1cb073738e537332b18f548f5a6d83aa5c",
         "revCount": 1893,
         "type": "git",
-        "url": "file:///var/home/phamnv/dev/workstation/celluloid"
+        "url": "ssh://git@github.com/akizminet/akcelluloid.git"
       },
       "original": {
         "type": "git",
-        "url": "file:///var/home/phamnv/dev/workstation/celluloid"
+        "url": "ssh://git@github.com/akizminet/akcelluloid.git"
       }
     },
     "fenix": {
@@ -75,6 +96,24 @@
         "type": "github"
       }
     },
+    "flake-utils_3": {
+      "inputs": {
+        "systems": "systems_3"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
     "naersk": {
       "inputs": {
         "fenix": "fenix",
@@ -97,7 +136,7 @@
     },
     "nixgl": {
       "inputs": {
-        "flake-utils": "flake-utils",
+        "flake-utils": "flake-utils_2",
         "nixpkgs": [
           "nixpkgs"
         ]
@@ -150,7 +189,7 @@
     },
     "nmrs-gui": {
       "inputs": {
-        "flake-utils": "flake-utils_2",
+        "flake-utils": "flake-utils_3",
         "naersk": "naersk",
         "nixpkgs": [
           "nixpkgs"
@@ -173,6 +212,7 @@
     },
     "root": {
       "inputs": {
+        "akquick": "akquick",
         "celluloid-src": "celluloid-src",
         "nixgl": "nixgl",
         "nixpkgs": "nixpkgs",
@@ -233,6 +273,21 @@
       }
     },
     "systems_2": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_3": {
       "locked": {
         "lastModified": 1681028828,
         "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",

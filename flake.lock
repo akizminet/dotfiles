@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1791802925,
-        "narHash": "sha256-rPvjpl1RwvUxz8dD4HmtuoQ8Z7H1cR9vGsS1jKXF4FQ=",
+        "lastModified": 1791811907,
+        "narHash": "sha256-A85IpKFvKk1ljBP9GKvWmhZKsmAlILorKJSRU4ySytE=",
         "owner": "akizminet",
         "repo": "akquick",
-        "rev": "0af39e59543dcf88fb61ab96c929eea3a65cb1a9",
+        "rev": "c89e999e401bc580d42da2ed1a8a7f59b5f572d2",
         "type": "github"
       },
       "original": {

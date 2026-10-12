@@ -20,24 +20,11 @@ center:
     format: "🕒 %H:%M:%S"
 
 end:
-  - type: volume
-    format: "{icon} {percentage}%"
-    max_volume: 150
-    sink_slider_orientation: horizontal
-    source_slider_orientation: horizontal
-    icons:
-      volume_high: "🔊"
-      volume_medium: "🔊"
-      volume_low: "🔊"
-      muted: "🔇"
-    on_scroll_up: "wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
-    on_scroll_down: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
   - type: sys_info
     interval: 2
     format:
       - "💻 {cpu_percent}%"
       - "🧠 {memory_used#Gi:.1}GiB"
-      - "🌐 ⬇{net_down#M:.1}M ⬆{net_up#M:.1}M"
   - type: tray
   - type: custom
     name: quicksettings

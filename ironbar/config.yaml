@@ -20,11 +20,6 @@ center:
     format: "🕒 %H:%M:%S"
 
 end:
-  - type: sys_info
-    interval: 2
-    format:
-      - "💻 {cpu_percent}%"
-      - "🧠 {memory_used#Gi:.1}GiB"
   - type: tray
   - type: custom
     name: quicksettings

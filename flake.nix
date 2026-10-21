@@ -13,11 +13,9 @@
     };
     akquick.url = "github:akizminet/akquick";
     akquick.inputs.nixpkgs.follows = "nixpkgs";
-    kinetic-downloader.url = "git+file:///var/home/phamnv/dev/workstation/mitm";
-    kinetic-downloader.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src, akquick, kinetic-downloader }:
+  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src, akquick }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -236,7 +234,6 @@
             pkgs.gvfs
             nmrs-gui.packages.${system}.default
             akquick.packages.${system}.default
-            kinetic-downloader.packages.${system}.default
 
             # CLI & Network Tools
             pkgs.binutils
@@ -265,7 +262,6 @@
 
         nmrs-gui = nmrs-gui.packages.${system}.default;
         akquick = akquick.packages.${system}.default;
-        kinetic-downloader = kinetic-downloader.packages.${system}.default;
         celluloid = celluloidWrapped;
         thunar = thunarWrapped;
         openvpn = pkgs.openvpn;

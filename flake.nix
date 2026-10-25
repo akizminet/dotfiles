@@ -5,8 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixgl.url = "github:nix-community/nixGL";
     nixgl.inputs.nixpkgs.follows = "nixpkgs";
-    nmrs-gui.url = "github:networkmanager-rs/nmrs-gui";
-    nmrs-gui.inputs.nixpkgs.follows = "nixpkgs";
     celluloid-src = {
       url = "git+ssh://git@github.com/akizminet/akcelluloid.git";
       flake = false;
@@ -15,7 +13,7 @@
     akquick.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, nixpkgs, nixgl, nmrs-gui, celluloid-src, akquick }:
+  outputs = { self, nixpkgs, nixgl, celluloid-src, akquick }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs {
@@ -232,7 +230,6 @@
             pkgs.xarchiver
             pkgs.peazip
             pkgs.gvfs
-            nmrs-gui.packages.${system}.default
             akquick.packages.${system}.default
 
             # CLI & Network Tools
@@ -260,7 +257,6 @@
           ];
         };
 
-        nmrs-gui = nmrs-gui.packages.${system}.default;
         akquick = akquick.packages.${system}.default;
         celluloid = celluloidWrapped;
         thunar = thunarWrapped;

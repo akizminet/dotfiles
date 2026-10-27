@@ -195,6 +195,23 @@
             --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
         '';
       };
+
+      rustdeskWrapped = pkgs.symlinkJoin {
+        name = "rustdesk-wrapped";
+        paths = [ pkgs.rustdesk ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/rustdesk
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/rustdesk" \
+            --add-flags "${pkgs.rustdesk}/bin/rustdesk"
+
+          rm -f $out/share/applications/rustdesk.desktop
+          mkdir -p $out/share/applications
+          sed -e "s|Exec=rustdesk|Exec=$out/bin/rustdesk|" \
+              -e "s|Exec=${pkgs.rustdesk}/bin/rustdesk|Exec=$out/bin/rustdesk|" \
+            ${pkgs.rustdesk}/share/applications/rustdesk.desktop > $out/share/applications/rustdesk.desktop
+        '';
+      };
     in
     {
       packages.${system} = {
@@ -223,6 +240,7 @@
             celluloidWrapped
             pkgs.libreoffice
             pkgs.satty
+            rustdeskWrapped
             pkgs.grim
             pkgs.slurp
             thunarWrapped
@@ -262,6 +280,7 @@
         thunar = thunarWrapped;
         openvpn = pkgs.openvpn;
         satty = pkgs.satty;
+        rustdesk = rustdeskWrapped;
         firefox = firefoxWrapped;
         fcitx5 = fcitx5WithAddons;
         fcitx5-with-addons = fcitx5WithAddons;

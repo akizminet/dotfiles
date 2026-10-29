@@ -19,8 +19,12 @@
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
+        overlays = [
+          (final: prev: { pcre = prev.pcre2; })
+          nixgl.overlay
+        ];
       };
-      nixGLIntel = nixgl.packages.${system}.nixGLIntel;
+      nixGLIntel = pkgs.nixgl.nixGLIntel;
       fcitx5WithAddons = pkgs.kdePackages.fcitx5-with-addons.override {
         addons = [
           pkgs.kdePackages.fcitx5-unikey
@@ -252,12 +256,14 @@
 
             # CLI & Network Tools
             pkgs.binutils
+            pkgs.corepack
             pkgs.ffmpeg-full
             pkgs.gh
             pkgs.google-cloud-sdk
             pkgs.inetutils
             pkgs.kubernetes-helm
             pkgs.kubectl
+            pkgs.nodejs_26
             pkgs.openvpn
             pkgs.ripgrep
             tailscaleWrapped
@@ -287,6 +293,8 @@
         helm = pkgs.kubernetes-helm;
         kubectl = pkgs.kubectl;
         peazip = pkgs.peazip;
+        nodejs = pkgs.nodejs_26;
+        corepack = pkgs.corepack;
       };
     };
 }

@@ -21,7 +21,16 @@
         config.allowUnfree = true;
         overlays = [
           (final: prev: { pcre = prev.pcre2; })
-          nixgl.overlay
+          # Equivalent of nixgl.overlay, avoiding its deprecated `final.system`
+          (final: _:
+            let isIntelX86Platform = final.stdenv.hostPlatform.system == "x86_64-linux";
+            in {
+              nixgl = import "${nixgl}/default.nix" {
+                pkgs = final;
+                enable32bits = isIntelX86Platform;
+                enableIntelX86Extensions = isIntelX86Platform;
+              };
+            })
         ];
       };
       nixGLIntel = pkgs.nixgl.nixGLIntel;
@@ -249,8 +258,7 @@
             pkgs.slurp
             thunarWrapped
             pkgs.tumbler
-            pkgs.xarchiver
-            pkgs.peazip
+            pkgs.file-roller
             pkgs.gvfs
             akquick.packages.${system}.default
 
@@ -292,7 +300,6 @@
         fcitx5-with-addons = fcitx5WithAddons;
         helm = pkgs.kubernetes-helm;
         kubectl = pkgs.kubectl;
-        peazip = pkgs.peazip;
         nodejs = pkgs.nodejs_26;
         corepack = pkgs.corepack;
       };

@@ -233,7 +233,7 @@
           paths = [
             # Desktop Environment & Wayland Compositors
             hyprlandWrapped
-            pkgs.hyprland-qtutils
+            pkgs.hyprland-guiutils
             hyprpaperWrapped
             pkgs.hypridle
             hyprlockWrapped

@@ -146,7 +146,7 @@ hl.bind(mainMod .. " + SHIFT + E", hl.dsp.exit())
 hl.bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = 0 }))
 hl.bind(mainMod .. " + G",         hl.dsp.group.toggle())
-hl.bind(mainMod .. " + SHIFT + G", hl.dsp.group.lock_active())
+hl.bind(mainMod .. " + SHIFT + G", hl.dsp.group.lock())
 hl.bind(mainMod .. " + N",         hl.dsp.exec_cmd("swaync-client -t -sw"))
 hl.bind(mainMod .. " + A",         hl.dsp.exec_cmd("akquick -t"))
 

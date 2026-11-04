@@ -53,6 +53,12 @@ if [ -x "$HOME/opt/antigravity/antigravity" ]; then
     ln -sf "$HOME/opt/antigravity/antigravity" "$HOME/.local/bin/antigravity"
 fi
 
+if [ -f "$HOME/dev/workstation/update_antigravity.py" ]; then
+    echo "🔗 Linking $HOME/dev/workstation/update_antigravity.py -> $HOME/.local/bin/antigravity-update"
+    ln -sf "$HOME/dev/workstation/update_antigravity.py" "$HOME/.local/bin/antigravity-update"
+    chmod +x "$HOME/dev/workstation/update_antigravity.py"
+fi
+
 if [ -d "$HOME/.nix-profile/share/icons" ]; then
     echo "🔗 Linking Nix profile icons into ~/.local/share/icons..."
     mkdir -p "$HOME/.local/share/icons/hicolor/scalable/apps"

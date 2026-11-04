@@ -1,0 +1,6 @@
+(allow init_t default_t (dir (search read open getattr)))
+(allow init_t default_t (file (read open getattr execute execute_no_trans map)))
+(allow init_t default_t (lnk_file (read getattr)))
+(allow NetworkManager_t default_t (dir (search read open getattr)))
+(allow NetworkManager_t default_t (file (read open getattr execute execute_no_trans map)))
+(allow NetworkManager_t default_t (lnk_file (read getattr)))

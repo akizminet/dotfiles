@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""
+Port forwarder using Tailscale SOCKS5 proxy (userspace networking).
+Usage: ts-rustdesk-forward [local_port] [target_ip] [target_port]
+Defaults: 21117 100.125.232.113 21118
+"""
+import asyncio
+import socket
+import struct
+import sys
+
+LOCAL_PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 21117
+TARGET_IP = sys.argv[2] if len(sys.argv) > 2 else "100.125.232.113"
+TARGET_PORT = int(sys.argv[3]) if len(sys.argv) > 3 else 21118
+SOCKS5_HOST = "127.0.0.1"
+SOCKS5_PORT = 1055
+
+async def forward(reader, writer):
+    try:
+        while True:
+            data = await reader.read(65536)
+            if not data:
+                break
+            writer.write(data)
+            await writer.drain()
+    except Exception:
+        pass
+    finally:
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+async def handle_client(client_reader, client_writer):
+    try:
+        proxy_reader, proxy_writer = await asyncio.open_connection(SOCKS5_HOST, SOCKS5_PORT)
+        
+        # SOCKS5 greeting (no auth)
+        proxy_writer.write(b'\x05\x01\x00')
+        await proxy_writer.drain()
+        resp = await proxy_reader.readexactly(2)
+        if resp != b'\x05\x00':
+            client_writer.close()
+            return
+        
+        # SOCKS5 CONNECT
+        ip_bytes = socket.inet_aton(TARGET_IP)
+        port_bytes = struct.pack('>H', TARGET_PORT)
+        req = b'\x05\x01\x00\x01' + ip_bytes + port_bytes
+        proxy_writer.write(req)
+        await proxy_writer.drain()
+        
+        reply = await proxy_reader.readexactly(10)
+        if reply[1] != 0:
+            client_writer.close()
+            return
+
+        asyncio.create_task(forward(client_reader, proxy_writer))
+        asyncio.create_task(forward(proxy_reader, client_writer))
+    except Exception:
+        client_writer.close()
+
+async def main():
+    server = await asyncio.start_server(handle_client, '127.0.0.1', LOCAL_PORT)
+    print(f"Forwarding 127.0.0.1:{LOCAL_PORT} -> {TARGET_IP}:{TARGET_PORT} via Tailscale SOCKS5 ({SOCKS5_HOST}:{SOCKS5_PORT})", flush=True)
+    async with server:
+        await server.serve_forever()
+
+if __name__ == '__main__':
+    asyncio.run(main())

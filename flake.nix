@@ -74,7 +74,8 @@
           rm -f $out/bin/firefox
           makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/firefox" \
             --add-flags "${pkgs.firefox}/bin/firefox" \
-            --set-default MOZ_ENABLE_WAYLAND 1
+            --set-default MOZ_ENABLE_WAYLAND 1 \
+            --set-default RES_OPTIONS "ndots:0"
 
           rm -f $out/share/applications/firefox.desktop
           mkdir -p $out/share/applications
@@ -225,6 +226,18 @@
             ${pkgs.rustdesk}/share/applications/rustdesk.desktop > $out/share/applications/rustdesk.desktop
         '';
       };
+
+      zapretWrapped = pkgs.symlinkJoin {
+        name = "zapret-wrapped";
+        paths = [ pkgs.zapret ];
+        buildInputs = [ pkgs.makeBinaryWrapper ];
+        postBuild = ''
+          rm -f $out/bin/zapret
+          makeWrapper "${pkgs.zapret}/bin/zapret" "$out/bin/zapret" \
+            --set-default ZAPRET_RW "/etc/zapret" \
+            --set-default ZAPRET_CONFIG "/etc/zapret/config"
+        '';
+      };
     in
     {
       packages.${system} = {
@@ -276,7 +289,7 @@
             pkgs.ripgrep
             tailscaleWrapped
             pkgs.wayvnc
-            pkgs.zapret
+            zapretWrapped
 
             # Input Method & Addons
             fcitx5WithAddons
@@ -302,6 +315,7 @@
         kubectl = pkgs.kubectl;
         nodejs = pkgs.nodejs_26;
         corepack = pkgs.corepack;
+        zapret = zapretWrapped;
       };
     };
 }

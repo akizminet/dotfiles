@@ -1,0 +1,18 @@
+[Unit]
+Description=Zapret DPI Bypass
+After=network-online.target nftables.service
+Wants=network-online.target
+
+[Service]
+Type=forking
+Environment="ZAPRET_RW=/etc/zapret"
+Environment="ZAPRET_CONFIG=/etc/zapret/config"
+ExecStart=/usr/bin/sh -c "/usr/local/bin/zapret start"
+ExecStop=/usr/bin/sh -c "/usr/local/bin/zapret stop"
+ExecReload=/usr/bin/sh -c "/usr/local/bin/zapret restart"
+RemainAfterExit=yes
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

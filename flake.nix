@@ -161,7 +161,7 @@
         buildInputs = [ pkgs.makeBinaryWrapper ];
         postBuild = ''
           rm -f $out/bin/Hyprland $out/bin/hyprland $out/bin/start-hyprland
-          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/start-hyprland" \
+          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/.Hyprland-nixgl" \
             --add-flags "${pkgs.hyprland}/bin/start-hyprland" \
             --add-flags "--no-nixgl" \
             --add-flags "--path" \
@@ -170,15 +170,18 @@
             --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
             --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
 
-          makeWrapper "${nixGLIntel}/bin/nixGLIntel" "$out/bin/Hyprland" \
-            --add-flags "${pkgs.hyprland}/bin/start-hyprland" \
-            --add-flags "--no-nixgl" \
-            --add-flags "--path" \
-            --add-flags "${pkgs.hyprland}/bin/Hyprland" \
-            --prefix __EGL_VENDOR_LIBRARY_DIRS : "${pkgs.mesa}/share/glvnd/egl_vendor.d" \
-            --prefix LIBGL_DRIVERS_PATH : "${pkgs.mesa}/lib/dri" \
-            --prefix GBM_BACKENDS_PATH : "${pkgs.mesa}/lib/gbm"
-          ln -s $out/bin/Hyprland $out/bin/hyprland
+          cat << EOF > "$out/bin/start-hyprland"
+#!/usr/bin/env bash
+if command -v kmscon-launch-gui >/dev/null 2>&1; then
+  exec kmscon-launch-gui "$out/bin/.Hyprland-nixgl" "\$@"
+else
+  exec "$out/bin/.Hyprland-nixgl" "\$@"
+fi
+EOF
+          chmod +x "$out/bin/start-hyprland"
+
+          ln -s start-hyprland $out/bin/Hyprland
+          ln -s start-hyprland $out/bin/hyprland
         '';
       };
 

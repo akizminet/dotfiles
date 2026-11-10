@@ -271,14 +271,11 @@ EOF
             akquick.packages.${system}.default
             pkgs.telegram-desktop
             pkgs.qbittorrent
-            pkgs.inkscape
             pkgs.dbeaver-bin
             pkgs.foliate
             pkgs.resources
             pkgs.loupe
             pkgs.papers
-            pkgs.seahorse
-            pkgs.luminance
 
             # CLI & Network Tools
             pkgs.binutils

@@ -10,9 +10,12 @@ x-scheme-handler/antigravity=antigravity.desktop
 x-scheme-handler/antigravity-ide=antigravity-ide.desktop
 application/json=dev.zed.Zed.desktop
 x-scheme-handler/jetbrains=jetbrainsd.desktop
-inode/directory=thunar.desktop
+inode/directory=org.gnome.Nautilus.desktop
 video/x-matroska=io.github.celluloid_player.Celluloid.desktop
 application/zip=org.gnome.FileRoller.desktop
+x-scheme-handler/tg=org.telegram.desktop.desktop
+x-scheme-handler/tonsite=org.telegram.desktop.desktop
+x-scheme-handler/ton=org.telegram.desktop.desktop
 
 [Added Associations]
 x-scheme-handler/http=google-chrome.desktop;com.google.Chrome.desktop;firefox.desktop;
@@ -39,8 +42,11 @@ application/x-xzpdf=org.gnome.Papers.desktop;
 application/illustrator=org.gnome.Papers.desktop;
 image/tiff=org.gnome.Papers.desktop;
 application/json=dev.zed.Zed.desktop;
-inode/directory=io.github.celluloid_player.Celluloid.desktop;thunar.desktop;
+inode/directory=org.gnome.Nautilus.desktop;
 video/x-matroska=userapp-celluloid-A6TUW3.desktop;io.github.celluloid_player.Celluloid.desktop;
 application/zip=org.gnome.FileRoller.desktop;
+x-scheme-handler/tg=org.telegram.desktop.desktop;
+x-scheme-handler/tonsite=org.telegram.desktop.desktop;
+x-scheme-handler/ton=org.telegram.desktop.desktop;
 
 [Removed Associations]

@@ -120,19 +120,12 @@
         paths = [ tailscaleBin pkgs.tailscale ];
       };
 
-      thunarWithPlugins = pkgs.thunar.override {
-        thunarPlugins = [
-          pkgs.thunar-archive-plugin
-          pkgs.thunar-volman
-        ];
-      };
-
-      thunarWrapped = pkgs.symlinkJoin {
-        name = "thunar-wrapped";
-        paths = [ thunarWithPlugins ];
+      nautilusWrapped = pkgs.symlinkJoin {
+        name = "nautilus-wrapped";
+        paths = [ pkgs.nautilus ];
         buildInputs = [ pkgs.makeBinaryWrapper ];
         postBuild = ''
-          wrapProgram "$out/bin/thunar" \
+          wrapProgram "$out/bin/nautilus" \
             --prefix GIO_EXTRA_MODULES : "${pkgs.gvfs}/lib/gio/modules" \
             --prefix XDG_DATA_DIRS : "${pkgs.gvfs}/share:$out/share"
         '';
@@ -272,11 +265,20 @@ EOF
             rustdeskWrapped
             pkgs.grim
             pkgs.slurp
-            thunarWrapped
-            pkgs.tumbler
+            nautilusWrapped
             pkgs.file-roller
             pkgs.gvfs
             akquick.packages.${system}.default
+            pkgs.telegram-desktop
+            pkgs.qbittorrent
+            pkgs.inkscape
+            pkgs.dbeaver-bin
+            pkgs.foliate
+            pkgs.resources
+            pkgs.loupe
+            pkgs.papers
+            pkgs.seahorse
+            pkgs.luminance
 
             # CLI & Network Tools
             pkgs.binutils
@@ -307,7 +309,7 @@ EOF
 
         akquick = akquick.packages.${system}.default;
         celluloid = celluloidWrapped;
-        thunar = thunarWrapped;
+        nautilus = nautilusWrapped;
         openvpn = pkgs.openvpn;
         satty = pkgs.satty;
         rustdesk = rustdeskWrapped;

@@ -1,0 +1,15 @@
+[Unit]
+Description=Mewsic Pet Shop - Sapo Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/phamnv/dev/mewsicpetshop
+ExecStart=/home/phamnv/dev/mewsicpetshop/.venv/bin/python -u /home/phamnv/dev/mewsicpetshop/bot.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

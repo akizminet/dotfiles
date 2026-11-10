@@ -18,3 +18,7 @@ Thumbs.db
 
 # Dynamic wallpaper symlink
 sway/wallpapers/current-wallpaper.jpg
+
+# Machine-specific / local user services
+systemd/user/mewsic-bot*
+systemd/user/*/mewsic-bot*

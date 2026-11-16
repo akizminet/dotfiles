@@ -103,6 +103,11 @@ hl.config({
         focus_on_activate       = false,
     },
 
+    render = {
+        cm_auto_hdr       = 0,
+        send_content_type = false,
+    },
+
     group = {
         col = {
             border_active   = { colors = { "rgba(89b4faff)", "rgba(cba6f7ff)" }, angle = 45 },

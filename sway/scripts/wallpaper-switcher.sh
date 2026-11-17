@@ -4,8 +4,8 @@
 set -euo pipefail
 
 WALLPAPER_DIR="/var/home/phamnv/.config/sway/wallpapers"
-DAY_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-day.jpg"
-NIGHT_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-night-citylights.jpg"
+DAY_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-launch-day.jpg"
+NIGHT_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-launch-night.jpg"
 STATE_FILE="/tmp/sway_wallpaper_mode_${UID}"
 
 # Coordinates for Vietnam (Ho Chi Minh City / Hanoi approx: 10.82N, 106.63E)

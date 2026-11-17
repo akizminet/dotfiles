@@ -9,7 +9,7 @@ fi
 
 WALLPAPER="$HOME/.config/sway/wallpapers/current-wallpaper.jpg"
 if [ ! -f "$WALLPAPER" ]; then
-    WALLPAPER="$HOME/.config/sway/wallpapers/ghibli-starship-night-citylights.jpg"
+    WALLPAPER="$HOME/.config/sway/wallpapers/ghibli-starship-launch-night.jpg"
 fi
 
 LOCK_ARGS=(

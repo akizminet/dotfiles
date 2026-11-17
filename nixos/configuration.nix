@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, akquick, ... }:
 
 let
   pythonGio = pkgs.python3.withPackages (ps: [ ps.pygobject3 ]);
@@ -48,11 +48,22 @@ EOF
     install -m 0644 ${./openvpn-sso/org.freedesktop.NetworkManager.openvpn-sso.conf} \
       $out/share/dbus-1/system.d/org.freedesktop.NetworkManager.openvpn-sso.conf
   '';
+
+  zapretWrapped = pkgs.symlinkJoin {
+    name = "zapret-wrapped";
+    paths = [ pkgs.zapret ];
+    buildInputs = [ pkgs.makeBinaryWrapper ];
+    postBuild = ''
+      rm -f $out/bin/zapret
+      makeWrapper "${pkgs.zapret}/bin/zapret" "$out/bin/zapret" \
+        --set-default ZAPRET_RW "/etc/zapret" \
+        --set-default ZAPRET_CONFIG "/etc/zapret/config"
+    '';
+  };
 in
 {
   imports = [
     ./hardware-configuration.nix
-    ./desktop.nix
   ];
 
   # Boot & Swap
@@ -167,6 +178,86 @@ in
   services.gvfs.enable = true;
   services.tailscale.enable = true;
   services.gnome.gnome-keyring.enable = true;
+
+  # Core Wayland Session, Lock Screen (PAM) & Input Method
+  programs.hyprland.enable = true;
+  programs.hyprlock.enable = true;
+  programs.sway.enable = true;
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+  i18n.defaultLocale = "en_US.UTF-8";
+  i18n.inputMethod = {
+    enable = true;
+    type = "fcitx5";
+    fcitx5 = {
+      waylandFrontend = true;
+      addons = with pkgs; [
+        kdePackages.fcitx5-unikey
+        kdePackages.fcitx5-configtool
+        fcitx5-gtk
+        fcitx5-bamboo
+      ];
+    };
+  };
+
+  fonts = {
+    fontDir.enable = true;
+    packages = with pkgs; [
+      nerd-fonts.monaspace
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-color-emoji
+      liberation_ttf
+    ];
+  };
+
+  # Minimal base OS & session packages (user apps live in flake.nix -> nix profile)
+  environment.systemPackages = with pkgs; [
+    adwaita-icon-theme
+    akquick.packages.${pkgs.stdenv.hostPlatform.system}.default
+    foot
+    git
+    grim
+    hypridle
+    hyprland-guiutils
+    hyprpaper
+    ironbar
+    libnotify
+    openvpn
+    polkit_gnome
+    python3
+    rofi
+    satty
+    slurp
+    swaynotificationcenter
+    wl-clipboard
+    zapretWrapped
+  ];
+
+  # Declarative dotfile symlinks (replaces setup.sh)
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.config/hypr - - - - %h/dev/dotfiles/hypr"
+    "L+ %h/.config/sway - - - - %h/dev/dotfiles/sway"
+    "L+ %h/.config/ironbar - - - - %h/dev/dotfiles/ironbar"
+    "L+ %h/.config/rofi - - - - %h/dev/dotfiles/rofi"
+    "L+ %h/.config/foot - - - - %h/dev/dotfiles/foot"
+    "L+ %h/.config/gtk-3.0 - - - - %h/dev/dotfiles/gtk-3.0"
+    "L+ %h/.config/fcitx5 - - - - %h/dev/dotfiles/fcitx5"
+    "L+ %h/.config/satty - - - - %h/dev/dotfiles/satty"
+    "L+ %h/.config/swaync - - - - %h/dev/dotfiles/swaync"
+    "L+ %h/.config/autostart - - - - %h/dev/dotfiles/autostart"
+    "L+ %h/.config/systemd - - - - %h/dev/dotfiles/systemd"
+    "L+ %h/.config/environment.d - - - - %h/dev/dotfiles/environment.d"
+    "L+ %h/.config/xdg-desktop-portal - - - - %h/dev/dotfiles/xdg-desktop-portal"
+    "L+ %h/.config/mimeapps.list - - - - %h/dev/dotfiles/mimeapps.list"
+    "L+ %h/.local/bin/antigravity-launcher.sh - - - - %h/dev/dotfiles/bin/antigravity-launcher.sh"
+    "L+ %h/.local/bin/restart-antigravity.sh - - - - %h/dev/dotfiles/bin/restart-antigravity.sh"
+    "L+ %h/.local/bin/screenshot - - - - %h/dev/dotfiles/bin/screenshot"
+    "L+ %h/.local/bin/ts-rustdesk-forward - - - - %h/dev/dotfiles/bin/ts-rustdesk-forward"
+    "L+ %h/.local/bin/antigravity - - - - %h/opt/antigravity/antigravity"
+    "L+ %h/.local/bin/antigravity-update - - - - %h/dev/workstation/update_antigravity.py"
+    "L+ %h/.local/share/applications/antigravity.desktop - - - - %h/dev/dotfiles/applications/antigravity.desktop"
+  ];
 
   # User account matching Fedora UID/GID (1000:1000)
   users.groups.phamnv.gid = 1000;

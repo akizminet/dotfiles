@@ -4,31 +4,32 @@ Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sw
 
 ---
 
-## 1. Cấu trúc thư mục NixOS
+## 1. Cấu trúc 2 tầng (Base OS tách riêng với User Apps)
 
-- `flake.nix` & `flake.lock`: Điểm vào Flake (`nixosConfigurations.homepc`, alias `workstation`), khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick`, và `celluloid-src`.
-- `nixos/configuration.nix`: Cấu hình **OS & Hệ thống lõi**:
+- **`flake.nix` & `flake.lock`:**
+  - **Tầng 1 — Base OS (`nixosConfigurations.homepc` / `workstation`):** Gọi sang `nixos/configuration.nix`, khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
+  - **Tầng 2 — User Apps & CLI Dev Tools (`packages.x86_64-linux.default`):** Gom toàn bộ ứng dụng cá nhân (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) vào profile riêng của user (cài bằng `nix profile`, không cần build lại Base OS mỗi khi thêm/xóa app).
+- **`nixos/configuration.nix`:** Thuần **Base OS & Wayland Session lõi**:
   - Bootloader `systemd-boot` + `zramSwap`.
   - Immutable `/etc` overlay (`system.etc.overlay.enable = true`, `mutable = true` với lớp ghi tách riêng tại `/.rw-etc/upper`) kết hợp `services.userborn.enable = true`.
   - `programs.nh` (`nh os switch` tự dùng flake mặc định, không cần gõ `sudo` hay `--flake`) và `trusted-users`.
   - Phần cứng Intel UHD 730 (`hardware.graphics` + `intel-media-driver`, `vpl-gpu-rt`), PipeWire, Bluetooth, NetworkManager + plugin **`nm-openvpn-sso`** đóng gói native (`nixos/openvpn-sso/`).
   - Tương thích FHS cho binary tải ngoài (như `~/opt/antigravity`) và script thông qua `programs.nix-ld` + `services.envfs`.
-  - Tài khoản `phamnv` (`uid=1000`, `gid=1000`) kèm `services.gnome.gnome-keyring` + `machine-id` cố định để giữ nguyên mật khẩu và Chrome keyring.
-- `nixos/desktop.nix`: Cấu hình **Desktop, Bộ gõ & Ứng dụng**:
-  - `programs.hyprland.enable`, `programs.hyprlock.enable` (tạo sẵn PAM `/etc/pam.d/hyprlock`), `programs.sway.enable`.
-  - Bộ gõ tiếng Việt `fcitx5` (`waylandFrontend = true`, `fcitx5-unikey`, `fcitx5-bamboo`).
-  - Font chữ (`nerd-fonts.monaspace`, `noto-fonts`, `noto-fonts-cjk-sans`, `noto-fonts-color-emoji`).
-  - `environment.systemPackages` và `systemd.user.tmpfiles.rules` (tự động duy trì toàn bộ symlink từ `~/dev/dotfiles/` sang `~/.config/`, `~/.local/bin/` và `~/.local/share/applications/` thay thế hoàn toàn `setup.sh`).
-- `nixos/hardware-configuration.nix`: Cấu hình mountpoint Btrfs (`subvol=nixos`, `subvol=nix`, `subvol=home`) và EFI `/boot`.
+  - Core Wayland session (`hyprland`, `hyprlock` với PAM, `sway`, `fcitx5` tiếng Việt, font chữ, `ironbar`, `rofi`, `foot`, `akquick`), `systemd.user.tmpfiles.rules` (tự nối toàn bộ symlink dotfiles thay cho `setup.sh`), và tài khoản `phamnv` (`uid=1000`, `gid=1000`, `gnome-keyring` + `machine-id`).
+- **`nixos/hardware-configuration.nix`:** Cấu hình mountpoint Btrfs (`subvol=nixos`, `subvol=nix`, `subvol=home`) và EFI `/boot`.
 
 ### Lệnh sử dụng hằng ngày
 
 ```bash
-# Áp dụng thay đổi cấu hình (không cần gõ sudo hay --flake)
+# Cập nhật Base OS (từ nixos/configuration.nix, không cần gõ sudo hay --flake)
 nh os switch
 
-# Cập nhật input trong flake.lock rồi áp dụng
-nix flake update && nh os switch
+# Cài lần đầu hoặc cập nhật User Apps (từ flake.nix#default)
+nix profile add ~/dev/dotfiles#default
+nix profile upgrade dotfiles
+
+# Cập nhật input trong flake.lock rồi nâng cấp cả OS lẫn User Apps
+nix flake update && nh os switch && nix profile upgrade dotfiles
 
 # Kiểm tra những file nào bị thay đổi runtime trong /etc so với cấu hình gốc
 ls -la /.rw-etc/upper
@@ -167,9 +168,10 @@ nixGLIntel ./result-vm/bin/run-homepc-vm
    # 1. Chốt NixOS lên đầu BootOrder
    nix shell nixpkgs#efibootmgr -c sudo efibootmgr -o <NIXOS_BOOT_NUM>,0006
 
-   # 2. Gỡ profile Nix cũ của Fedora (và xóa symlink icon/binary sót trong ~/.local)
-   rm -f ~/.nix-profile
+   # 2. Gỡ profile Nix cũ của Fedora (chứa nixGL), dọn symlink gãy rồi cài lại User Apps từ flake
+   rm -f ~/.nix-profile ~/.local/state/nix/profiles/profile*
    find ~/.local/share/icons -xtype l -delete
+   nix profile add ~/dev/dotfiles#default
 
    # 3. Xóa subvolume OSTree cũ (subvol=root và /home/nix cũ) để thu hồi dung lượng
    sudo mkdir -p /mnt/btrfs

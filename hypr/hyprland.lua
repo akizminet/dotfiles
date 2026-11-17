@@ -22,8 +22,8 @@ hl.env("WLR_RENDERER_ALLOW_SOFTWARE", "1")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 local home = os.getenv("HOME") or "/home/phamnv"
-hl.env("PATH", "/run/wrappers/bin:" .. home .. "/.local/bin:/run/current-system/sw/bin:/usr/bin:/bin")
-hl.env("XDG_DATA_DIRS", "/run/current-system/sw/share:" .. home .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share")
+hl.env("PATH", "/run/wrappers/bin:" .. home .. "/.local/bin:/run/current-system/sw/bin:" .. home .. "/.nix-profile/bin:/usr/bin:/bin")
+hl.env("XDG_DATA_DIRS", "/run/current-system/sw/share:" .. home .. "/.nix-profile/share:" .. home .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share")
 
 ---------------------
 ---- MY PROGRAMS ----

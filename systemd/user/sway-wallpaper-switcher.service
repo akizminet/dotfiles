@@ -5,4 +5,4 @@ After=graphical-session.target
 
 [Service]
 Type=oneshot
-ExecStart=/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh
+ExecStart=/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh

@@ -1,0 +1,181 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# NetworkManager Python-based OpenVPN SSO Helper (NATIVE GIO)
+
+import sys
+import os
+import socket
+import struct
+from gi.repository import Gio, GLib
+
+def ip_to_uint32(ip_str):
+    if not ip_str:
+        return 0
+    try:
+        return struct.unpack("I", socket.inet_aton(ip_str))[0]
+    except Exception:
+        return 0
+
+def netmask_to_prefix(netmask_str):
+    if not netmask_str:
+        return 32
+    try:
+        val = ip_to_uint32(netmask_str)
+        binary = bin(val).count('1')
+        return binary
+    except Exception:
+        return 32
+
+def main():
+    # Parse args
+    bus_name = "org.freedesktop.NetworkManager.openvpn-sso"
+    for i, arg in enumerate(sys.argv):
+        if arg == "--bus-name" and i + 1 < len(sys.argv):
+            bus_name = sys.argv[i + 1]
+
+    print(f"[Helper] Contacting D-Bus service: {bus_name}", flush=True)
+
+    config = {}
+    ip4config = {}
+
+    # Device
+    dev = os.environ.get("dev")
+    if dev:
+        config["tundev"] = dev
+
+    # External Gateway IP
+    trusted_ip = os.environ.get("trusted_ip") or os.environ.get("remote_1")
+    if trusted_ip:
+        config["gateway"] = ip_to_uint32(trusted_ip)
+
+    # MTU
+    tun_mtu = os.environ.get("tun_mtu")
+    if tun_mtu:
+        config["mtu"] = int(tun_mtu)
+
+    config["has-ip4"] = True
+
+    # IPv4 Config
+    local_ip = os.environ.get("ifconfig_local")
+    if local_ip:
+        ip4config["address"] = ip_to_uint32(local_ip)
+
+    remote_ip = os.environ.get("ifconfig_remote")
+    netmask = os.environ.get("ifconfig_netmask")
+    
+    if netmask and netmask.startswith("255."):
+        ip4config["prefix"] = netmask_to_prefix(netmask)
+    else:
+        if remote_ip:
+            ip4config["ptp"] = ip_to_uint32(remote_ip)
+        ip4config["prefix"] = 32
+
+    int_gw = os.environ.get("route_vpn_gateway")
+    if int_gw:
+        ip4config["int-gw"] = ip_to_uint32(int_gw)
+
+    # DNS and Search Domains
+    dns_servers = []
+    domains = []
+    
+    for k, v in os.environ.items():
+        if k.startswith("foreign_option_"):
+            if v.startswith("dhcp-option DNS "):
+                dns_ip = v[len("dhcp-option DNS "):]
+                dns_servers.append(ip_to_uint32(dns_ip))
+            elif v.startswith("dhcp-option DOMAIN "):
+                domain = v[len("dhcp-option DOMAIN "):]
+                domains.append(domain)
+            elif v.startswith("dhcp-option DOMAIN-SEARCH "):
+                domain = v[len("dhcp-option DOMAIN-SEARCH "):]
+                domains.append(domain)
+
+    if dns_servers:
+        ip4config["dns"] = dns_servers
+    if domains:
+        ip4config["dns-search"] = domains
+
+    # Static routes
+    routes = []
+    i = 1
+    while True:
+        network = os.environ.get(f"route_network_{i}")
+        if not network:
+            break
+        netmask_val = os.environ.get(f"route_netmask_{i}")
+        prefix = netmask_to_prefix(netmask_val) if netmask_val else 32
+        gateway = os.environ.get(f"route_gateway_{i}") or int_gw or "0.0.0.0"
+        metric_val = os.environ.get(f"route_metric_{i}")
+        metric = int(metric_val) if metric_val else 0
+
+        routes.append([
+            ip_to_uint32(network),
+            prefix,
+            ip_to_uint32(gateway),
+            metric
+        ])
+        i += 1
+
+    if routes:
+        ip4config["routes"] = routes
+
+    # Convert to D-Bus formats using GLib.Variant
+    dbus_config = {}
+    for k, v in config.items():
+        if k in ["gateway", "mtu"]:
+            dbus_config[k] = GLib.Variant('u', v)
+        elif k == "has-ip4":
+            dbus_config[k] = GLib.Variant('b', v)
+        else:
+            dbus_config[k] = GLib.Variant('s', str(v))
+
+    dbus_ip4 = {}
+    for k, v in ip4config.items():
+        if k in ["address", "prefix", "ptp", "int-gw"]:
+            dbus_ip4[k] = GLib.Variant('u', v)
+        elif k in ["dns", "wins"]:
+            dbus_ip4[k] = GLib.Variant('au', v)
+        elif k == "dns-search":
+            dbus_ip4[k] = GLib.Variant('as', v)
+        elif k == "routes":
+            dbus_ip4[k] = GLib.Variant('aau', v)
+        else:
+            dbus_ip4[k] = GLib.Variant('s', str(v))
+
+    # Connect to D-Bus and send config to the main service
+    try:
+        connection = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        proxy = Gio.DBusProxy.new_sync(
+            connection,
+            Gio.DBusProxyFlags.NONE,
+            None,
+            bus_name,
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            "org.freedesktop.NetworkManager.VPN.Plugin",
+            None
+        )
+        
+        # Call SetConfig
+        proxy.call_sync(
+            "SetConfig",
+            GLib.Variant("(a{sv})", (dbus_config,)),
+            Gio.DBusCallFlags.NONE,
+            -1,
+            None
+        )
+        
+        # Call SetIp4Config
+        proxy.call_sync(
+            "SetIp4Config",
+            GLib.Variant("(a{sv})", (dbus_ip4,)),
+            Gio.DBusCallFlags.NONE,
+            -1,
+            None
+        )
+        print("[Helper] Sent configuration successfully", flush=True)
+    except Exception as e:
+        sys.stderr.write(f"[Helper] Failed to send config to DBus service: {e}\n")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main()

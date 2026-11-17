@@ -21,8 +21,9 @@ hl.env("WLR_NO_HARDWARE_CURSORS", "1")
 hl.env("WLR_RENDERER_ALLOW_SOFTWARE", "1")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
-hl.env("PATH", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/bin:" .. (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/bin:/nix/var/nix/profiles/default/bin:/usr/local/bin:/usr/bin:/bin")
-hl.env("XDG_DATA_DIRS", (os.getenv("HOME") or "/var/home/phamnv") .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:" .. (os.getenv("HOME") or "/var/home/phamnv") .. "/.nix-profile/share:/usr/local/share:/usr/share")
+local home = os.getenv("HOME") or "/home/phamnv"
+hl.env("PATH", "/run/wrappers/bin:" .. home .. "/.local/bin:/run/current-system/sw/bin:/usr/bin:/bin")
+hl.env("XDG_DATA_DIRS", "/run/current-system/sw/share:" .. home .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share")
 
 ---------------------
 ---- MY PROGRAMS ----
@@ -43,7 +44,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("fcitx5 -d")
     hl.exec_cmd("hypridle")
     hl.exec_cmd("hyprpaper")
-    hl.exec_cmd("/var/home/phamnv/.config/sway/scripts/wallpaper-switcher.sh --force")
+    hl.exec_cmd(home .. "/.config/sway/scripts/wallpaper-switcher.sh --force")
     hl.exec_cmd("systemctl --user start sway-wallpaper-switcher.timer")
     hl.exec_cmd("systemctl --user start polkit-gnome.service")
     hl.exec_cmd("systemctl --user start nm-openvpn-sso-user-agent.service")

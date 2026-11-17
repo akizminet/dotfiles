@@ -3,7 +3,7 @@
 
 set -euo pipefail
 
-WALLPAPER_DIR="/var/home/phamnv/.config/sway/wallpapers"
+WALLPAPER_DIR="/home/phamnv/.config/sway/wallpapers"
 DAY_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-launch-day.jpg"
 NIGHT_WALLPAPER="${WALLPAPER_DIR}/ghibli-starship-launch-night.jpg"
 STATE_FILE="/tmp/sway_wallpaper_mode_${UID}"

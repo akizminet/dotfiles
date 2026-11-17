@@ -43,4 +43,4 @@ end:
       - type: button
         name: power_btn
         label: "⏻"
-        on_click_left: "/var/home/phamnv/.config/rofi/powermenu.sh"
+        on_click_left: "/home/phamnv/.config/rofi/powermenu.sh"

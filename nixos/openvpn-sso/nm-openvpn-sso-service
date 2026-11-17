@@ -1,0 +1,533 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# NetworkManager Python-based OpenVPN SSO Plugin Service (NATIVE GIO)
+
+import sys
+import os
+import subprocess
+import threading
+import pwd
+from gi.repository import Gio, GLib
+
+# NM VPN Service States
+STATE_UNKNOWN = 0
+STATE_INIT = 1
+STATE_SHUTDOWN = 2
+STATE_STARTING = 3
+STATE_STARTED = 4
+STATE_STOPPING = 5
+STATE_STOPPED = 6
+
+introspection_xml = """
+<node>
+  <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
+    <method name="Connect">
+      <arg type="a{sa{sv}}" name="connection" direction="in"/>
+    </method>
+    <method name="ConnectInteractive">
+      <arg type="a{sa{sv}}" name="connection" direction="in"/>
+      <arg type="a{sv}" name="details" direction="in"/>
+    </method>
+    <method name="NeedSecrets">
+      <arg type="a{sa{sv}}" name="settings" direction="in"/>
+      <arg type="s" name="setting_name" direction="out"/>
+    </method>
+    <method name="Disconnect"/>
+    <method name="SetConfig">
+      <arg type="a{sv}" name="config" direction="in"/>
+    </method>
+    <method name="SetIp4Config">
+      <arg type="a{sv}" name="config" direction="in"/>
+    </method>
+    <method name="SetIp6Config">
+      <arg type="a{sv}" name="config" direction="in"/>
+    </method>
+    <method name="SetFailure">
+      <arg type="s" name="reason" direction="in"/>
+    </method>
+    <method name="NewSecrets">
+      <arg type="a{sa{sv}}" name="connection" direction="in"/>
+    </method>
+    <property name="State" type="u" access="read"/>
+    <signal name="StateChanged">
+      <arg type="u" name="state"/>
+    </signal>
+    <signal name="Config">
+      <arg type="a{sv}" name="config"/>
+    </signal>
+    <signal name="Ip4Config">
+      <arg type="a{sv}" name="ip4config"/>
+    </signal>
+    <signal name="Ip6Config">
+      <arg type="a{sv}" name="ip6config"/>
+    </signal>
+    <signal name="Failure">
+      <arg type="u" name="reason"/>
+    </signal>
+    <signal name="SsoUrl">
+      <arg type="s" name="url"/>
+    </signal>
+  </interface>
+</node>
+"""
+
+def parse_remotes(remote_str, default_port=None):
+    import re
+    # Split by comma or whitespace
+    tokens = re.split(r'[\s,]+', remote_str)
+    results = []
+    for token in tokens:
+        token = token.strip()
+        if not token:
+            continue
+        
+        host = token
+        port = None
+        proto = None
+
+        # Check for IPv6 with brackets, e.g. [2001:db8::1]:1195
+        if token.startswith('['):
+            end_bracket = token.find(']')
+            if end_bracket != -1:
+                host = token[1:end_bracket]
+                rest = token[end_bracket+1:]
+                if rest.startswith(':'):
+                    rest_parts = rest[1:].split(':')
+                    if len(rest_parts) >= 1 and rest_parts[0]:
+                        port = rest_parts[0]
+                    if len(rest_parts) >= 2 and rest_parts[1]:
+                        proto = rest_parts[1]
+                resolved_port = port or default_port
+                results.append((host, resolved_port, proto))
+                continue
+        
+        # For hostname or IPv4 or bracketless IPv6
+        if ':' in token:
+            parts = token.rsplit(':', 2)
+            # If the last part is a protocol (like tcp, udp, etc.)
+            if len(parts) >= 2 and parts[-1].lower() in ['tcp', 'udp', 'tcp4', 'tcp6', 'udp4', 'udp6', 'tcp-client', 'udp-client']:
+                proto = parts[-1]
+                if len(parts) == 3 and parts[-2].isdigit():
+                    port = parts[-2]
+                    host = parts[-3]
+                else:
+                    port = None
+                    host = ':'.join(parts[:-1])
+            elif parts[-1].isdigit():
+                port = parts[-1]
+                host = ':'.join(parts[:-1])
+                proto = None
+            else:
+                host = token
+                port = None
+                proto = None
+        else:
+            host = token
+            port = None
+            proto = None
+            
+        resolved_port = port or default_port
+        results.append((host, resolved_port, proto))
+    return results
+
+class VpnPlugin(object):
+    def __init__(self, connection, bus_name, loop):
+        self._bus_name = bus_name
+        self._loop = loop
+        self._state = STATE_INIT
+        self._proc = None
+        self._thread = None
+        self._config = None
+        self._ip4config = None
+        self._connection = connection
+        self._exiting = False
+
+        # Introspect and Register Object
+        self.node_info = Gio.DBusNodeInfo.new_for_xml(introspection_xml)
+        self.interface_info = self.node_info.interfaces[0]
+        
+        self.reg_id = connection.register_object(
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            self.interface_info,
+            self.on_method_call,
+            self.on_get_property,
+            None
+        )
+        print(f"[Service] Object registered under registration ID {self.reg_id}", flush=True)
+
+    def schedule_exit(self, delay_ms=1000):
+        if self._exiting:
+            return
+        self._exiting = True
+        print(f"[Service] Scheduling exit in {delay_ms}ms...", flush=True)
+        GLib.timeout_add(delay_ms, self._do_exit)
+
+    def _do_exit(self):
+        print("[Service] Exiting main loop...", flush=True)
+        self._loop.quit()
+        return False
+
+    def on_get_property(self, connection, sender, object_path, interface_name, property_name):
+        print(f"[Service] GetProperty: {property_name}", flush=True)
+        if property_name == "State":
+            return GLib.Variant('u', self._state)
+        return None
+
+    def on_method_call(self, connection, sender, object_path, interface_name, method_name, parameters, invocation):
+        print(f"[Service] MethodCall: {method_name}", flush=True)
+        try:
+            args = parameters.unpack()
+            
+            if method_name == "Connect":
+                self.Connect(args[0])
+                invocation.return_value(None)
+            elif method_name == "ConnectInteractive":
+                self.ConnectInteractive(args[0], args[1])
+                invocation.return_value(None)
+            elif method_name == "NeedSecrets":
+                res = self.NeedSecrets(args[0])
+                invocation.return_value(GLib.Variant("(s)", (res,)))
+            elif method_name == "Disconnect":
+                self.Disconnect()
+                invocation.return_value(None)
+            elif method_name == "SetConfig":
+                self.SetConfig(args[0])
+                invocation.return_value(None)
+            elif method_name == "SetIp4Config":
+                self.SetIp4Config(args[0])
+                invocation.return_value(None)
+            elif method_name == "SetIp6Config":
+                self.SetIp6Config(args[0])
+                invocation.return_value(None)
+            elif method_name == "SetFailure":
+                self.SetFailure(args[0])
+                invocation.return_value(None)
+            elif method_name == "NewSecrets":
+                self.NewSecrets(args[0])
+                invocation.return_value(None)
+        except Exception as e:
+            print(f"[Service] Error in method {method_name}: {e}", flush=True)
+            invocation.return_dbus_error("org.freedesktop.NetworkManager.VPN.Error", str(e))
+
+    def set_state(self, new_state):
+        if self._state != new_state:
+            self._state = new_state
+            self.emit_state_changed(new_state)
+
+    def emit_state_changed(self, state):
+        self._connection.emit_signal(
+            None,
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            "org.freedesktop.NetworkManager.VPN.Plugin",
+            "StateChanged",
+            GLib.Variant("(u)", (state,))
+        )
+
+    def Connect(self, connection):
+        print("[Service] Connect called", flush=True)
+        self.set_state(STATE_STARTING)
+        
+        args = self._build_args(connection)
+        print(f"[Service] Starting OpenVPN with args: {args}", flush=True)
+
+        try:
+            self._proc = subprocess.Popen(
+                args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+        except Exception as e:
+            print(f"[Service] Failed to spawn openvpn: {e}", flush=True)
+            self.set_state(STATE_STOPPED)
+            self.emit_failure(1)
+            self.schedule_exit()
+            return
+
+        self._thread = threading.Thread(target=self._monitor_openvpn)
+        self._thread.daemon = True
+        self._thread.start()
+
+    def ConnectInteractive(self, connection, details):
+        self.Connect(connection)
+
+    def NeedSecrets(self, settings):
+        return ""
+
+    def Disconnect(self):
+        print("[Service] Disconnect called", flush=True)
+        self.set_state(STATE_STOPPING)
+        if self._proc:
+            self._proc.terminate()
+            try:
+                self._proc.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+            self._proc = None
+        self.set_state(STATE_STOPPED)
+        self.schedule_exit()
+
+    def SetConfig(self, config):
+        print(f"[Service] SetConfig received: {config}", flush=True)
+        self._config = config
+        
+        # Convert dictionary to proper GLib Variant types
+        dbus_config = {}
+        for k, v in config.items():
+            if k == "gateway" or k == "mtu":
+                dbus_config[k] = GLib.Variant('u', v)
+            elif k == "has-ip4":
+                dbus_config[k] = GLib.Variant('b', v)
+            else:
+                dbus_config[k] = GLib.Variant('s', str(v))
+
+        self._connection.emit_signal(
+            None,
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            "org.freedesktop.NetworkManager.VPN.Plugin",
+            "Config",
+            GLib.Variant("(a{sv})", (dbus_config,))
+        )
+
+    def SetIp4Config(self, config):
+        print(f"[Service] SetIp4Config received: {config}", flush=True)
+        self._ip4config = config
+        
+        # Convert dictionary to proper GLib Variant types
+        dbus_ip4 = {}
+        for k, v in config.items():
+            if k in ["address", "prefix", "ptp", "int-gw"]:
+                dbus_ip4[k] = GLib.Variant('u', v)
+            elif k in ["dns", "wins"]:
+                dbus_ip4[k] = GLib.Variant('au', v)
+            elif k == "dns-search":
+                dbus_ip4[k] = GLib.Variant('as', v)
+            elif k == "routes":
+                dbus_ip4[k] = GLib.Variant('aau', v)
+            else:
+                dbus_ip4[k] = GLib.Variant('s', str(v))
+
+        self._connection.emit_signal(
+            None,
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            "org.freedesktop.NetworkManager.VPN.Plugin",
+            "Ip4Config",
+            GLib.Variant("(a{sv})", (dbus_ip4,))
+        )
+        
+        self.set_state(STATE_STARTED)
+        self.emit_state_changed(5) 
+
+    def SetIp6Config(self, config):
+        print(f"[Service] SetIp6Config received: {config}", flush=True)
+
+    def SetFailure(self, reason):
+        print(f"[Service] SetFailure received: {reason}", flush=True)
+        self.set_state(STATE_STOPPED)
+        self.emit_failure(1)
+        self.schedule_exit()
+
+    def emit_failure(self, reason):
+        self._connection.emit_signal(
+            None,
+            "/org/freedesktop/NetworkManager/VPN/Plugin",
+            "org.freedesktop.NetworkManager.VPN.Plugin",
+            "Failure",
+            GLib.Variant("(u)", (reason,))
+        )
+
+    def NewSecrets(self, connection):
+        pass
+
+    def _build_args(self, connection):
+        vpn_data = connection.get('vpn', {}).get('data', {})
+        config_path = vpn_data.get('config')
+        fallback_path = "/etc/openvpn/phamnv.ovpn"
+        if os.path.exists(fallback_path):
+            config_path = fallback_path
+        elif not config_path and not vpn_data.get('ca'):
+            config_path = fallback_path
+
+        args = ['stdbuf', '-oL', 'openvpn']
+
+        if config_path:
+            args += ['--config', config_path]
+        else:
+            args += [
+                '--client',
+                '--nobind',
+                '--dev', vpn_data.get('dev', 'tun'),
+                '--persist-key',
+                '--persist-tun',
+                '--resolv-retry', 'infinite',
+            ]
+            
+            ca = vpn_data.get('ca')
+            if ca:
+                args += ['--ca', ca]
+            
+            cert = vpn_data.get('cert')
+            if cert:
+                args += ['--cert', cert]
+                
+            key = vpn_data.get('key')
+            if key:
+                args += ['--key', key]
+
+            cipher = vpn_data.get('cipher')
+            if cipher:
+                args += ['--cipher', cipher]
+
+            auth = vpn_data.get('auth')
+            if auth:
+                args += ['--auth', auth]
+
+            remote_val = vpn_data.get('remote')
+            if remote_val:
+                default_port = vpn_data.get('port')
+                remotes = parse_remotes(remote_val, default_port)
+                for host, port, proto in remotes:
+                    args += ['--remote', host]
+                    if port:
+                        args.append(port)
+                    if proto:
+                        args.append(proto)
+
+            proto_tcp = vpn_data.get('proto-tcp')
+            if proto_tcp == 'yes':
+                args += ['--proto', 'tcp']
+            else:
+                args += ['--proto', 'udp']
+
+            remote_cert_tls = vpn_data.get('remote-cert-tls')
+            if remote_cert_tls:
+                args += ['--remote-cert-tls', remote_cert_tls]
+
+            comp_lzo = vpn_data.get('comp-lzo')
+            if comp_lzo in ['yes', 'adaptive']:
+                args += ['--comp-lzo', comp_lzo]
+            elif comp_lzo == 'no':
+                args += ['--comp-lzo', 'no']
+
+            ta = vpn_data.get('ta')
+            if ta:
+                args += ['--tls-auth', ta]
+                ta_dir = vpn_data.get('ta-dir')
+                if ta_dir:
+                    args.append(ta_dir)
+
+            tls_crypt = vpn_data.get('tls-crypt')
+            if tls_crypt:
+                args += ['--tls-crypt', tls_crypt]
+
+        args += [
+            '--verb', '3',
+            '--setenv', 'IV_SSO', 'webauth,openurl',
+            '--route-noexec',
+            '--ifconfig-noexec',
+            '--script-security', '2',
+            '--up', f'/usr/local/bin/nm-openvpn-sso-helper --bus-name {self._bus_name} --',
+            '--up-restart'
+        ]
+
+        return args
+
+    def _monitor_openvpn(self):
+        import re
+        webauth_re = re.compile(r"WEB_AUTH::(https?://[^\'\"]+)")
+        
+        while self._proc:
+            line = self._proc.stdout.readline()
+            if not line:
+                break
+            print(f"[OpenVPN] {line.strip()}", flush=True)
+            
+            match = webauth_re.search(line)
+            if match:
+                url = match.group(1)
+                print(f"[Service] Detected SSO URL: {url}", flush=True)
+                self._open_browser(url)
+
+        if self._proc:
+            code = self._proc.wait()
+            print(f"[Service] OpenVPN exited with code: {code}", flush=True)
+            self._proc = None
+            self.set_state(STATE_STOPPED)
+            self.emit_failure(1)
+            self.schedule_exit()
+
+    def _open_browser(self, url):
+        print(f"[Service] Emitting D-Bus SsoUrl signal for URL: {url}", flush=True)
+        try:
+            self._connection.emit_signal(
+                None,
+                "/org/freedesktop/NetworkManager/VPN/Plugin",
+                "org.freedesktop.NetworkManager.VPN.Plugin",
+                "SsoUrl",
+                GLib.Variant("(s)", (url,))
+            )
+        except Exception as e:
+            print(f"[Service] Failed to emit D-Bus signal: {e}. Trying fallback...", flush=True)
+            try:
+                out = subprocess.check_output(["loginctl", "list-sessions", "--no-legend"], text=True)
+                gui_user = None
+                for line in out.strip().split("\n"):
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        session_id = parts[0]
+                        user = parts[2]
+                        session_info = subprocess.check_output(["loginctl", "show-session", session_id], text=True)
+                        if "Type=x11" in session_info or "Type=wayland" in session_info:
+                            gui_user = user
+                            break
+                if not gui_user:
+                    gui_user = "phamnv"
+                    
+                print(f"[Service] Opening browser via fallback as user: {gui_user}", flush=True)
+                uid = pwd.getpwnam(gui_user).pw_uid
+                env = os.environ.copy()
+                env['HOME'] = f"/home/{gui_user}"
+                env['USER'] = gui_user
+                env['LOGNAME'] = gui_user
+                env['XDG_RUNTIME_DIR'] = f"/run/user/{uid}"
+                env['DBUS_SESSION_BUS_ADDRESS'] = f"unix:path=/run/user/{uid}/bus"
+                
+                subprocess.Popen(["sudo", "-u", gui_user, "xdg-open", url], env=env)
+            except Exception as fe:
+                print(f"[Service] Fallback open browser failed: {fe}", flush=True)
+
+def main():
+    bus_name = "org.freedesktop.NetworkManager.openvpn-sso"
+    print(f"[Service] Starting D-Bus service: {bus_name}", flush=True)
+    
+    loop = GLib.MainLoop()
+
+    def on_bus_acquired(connection, name):
+        print(f"[Service] Bus acquired: {name}", flush=True)
+        global service
+        service = VpnPlugin(connection, bus_name, loop)
+
+    def on_name_acquired(connection, name):
+        print(f"[Service] Name acquired: {name}", flush=True)
+
+    def on_name_lost(connection, name):
+        print(f"[Service] Name lost or failed to acquire: {name}", flush=True)
+        sys.exit(1)
+
+    owner_id = Gio.bus_own_name(
+        Gio.BusType.SYSTEM,
+        bus_name,
+        Gio.BusNameOwnerFlags.NONE,
+        on_bus_acquired,
+        on_name_acquired,
+        on_name_lost
+    )
+
+    try:
+        loop.run()
+    except KeyboardInterrupt:
+        pass
+
+if __name__ == "__main__":
+    main()

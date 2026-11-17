@@ -4,7 +4,7 @@ PartOf=graphical-session.target
 After=graphical-session.target
 
 [Service]
-ExecStart=/usr/local/bin/nm-openvpn-sso-user-agent
+ExecStart=/run/current-system/sw/bin/nm-openvpn-sso-user-agent
 Restart=always
 RestartSec=3
 

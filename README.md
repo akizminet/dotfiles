@@ -4,11 +4,11 @@ Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sw
 
 ---
 
-## 1. Cấu trúc 2 tầng (Base OS tách riêng với User Apps)
+## 1. Cấu trúc 2 lớp (Base OS tách riêng với User Apps, đồng bộ 1 lệnh)
 
 - **`flake.nix` & `flake.lock`:**
-  - **Tầng 1 — Base OS (`nixosConfigurations.homepc` / `workstation`):** Gọi sang `nixos/configuration.nix`, khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
-  - **Tầng 2 — User Apps & CLI Dev Tools (`packages.x86_64-linux.default`):** Gom toàn bộ ứng dụng cá nhân (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) vào profile riêng của user (cài bằng `nix profile`, không cần build lại Base OS mỗi khi thêm/xóa app).
+  - **Cấu hình máy (`nixosConfigurations.homepc` / `workstation`):** Khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
+  - **User Apps & CLI Dev Tools (`userPackagesModule` -> `users.users.phamnv.packages`):** Khai báo toàn bộ ứng dụng cá nhân (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) trực tiếp vào profile riêng của user tại `/etc/profiles/per-user/phamnv` — tách khỏi `environment.systemPackages` (`/run/current-system/sw`) nhưng vẫn đồng bộ 100% cùng driver `Mesa` và rollback cùng generation khi chạy `nh os switch` (không dùng `nix profile` rời).
 - **`nixos/configuration.nix`:** Thuần **Base OS & Wayland Session lõi**:
   - Bootloader `systemd-boot` + `zramSwap`.
   - Immutable `/etc` overlay (`system.etc.overlay.enable = true`, `mutable = true` với lớp ghi tách riêng tại `/.rw-etc/upper`) kết hợp `services.userborn.enable = true`.
@@ -21,15 +21,11 @@ Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sw
 ### Lệnh sử dụng hằng ngày
 
 ```bash
-# Cập nhật Base OS (từ nixos/configuration.nix, không cần gõ sudo hay --flake)
+# Áp dụng thay đổi cấu hình OS lẫn User Apps (không cần gõ sudo hay --flake)
 nh os switch
 
-# Cài lần đầu hoặc cập nhật User Apps (từ flake.nix#default)
-nix profile add ~/dev/dotfiles#default
-nix profile upgrade dotfiles
-
-# Cập nhật input trong flake.lock rồi nâng cấp cả OS lẫn User Apps
-nix flake update && nh os switch && nix profile upgrade dotfiles
+# Cập nhật toàn bộ nixpkgs/inputs trong flake.lock rồi áp dụng đồng bộ
+nix flake update && nh os switch
 
 # Kiểm tra những file nào bị thay đổi runtime trong /etc so với cấu hình gốc
 ls -la /.rw-etc/upper
@@ -168,10 +164,9 @@ nixGLIntel ./result-vm/bin/run-homepc-vm
    # 1. Chốt NixOS lên đầu BootOrder
    nix shell nixpkgs#efibootmgr -c sudo efibootmgr -o <NIXOS_BOOT_NUM>,0006
 
-   # 2. Gỡ profile Nix cũ của Fedora (chứa nixGL), dọn symlink gãy rồi cài lại User Apps từ flake
-   rm -f ~/.nix-profile ~/.local/state/nix/profiles/profile*
+   # 2. Gỡ profile Nix cũ của Fedora (chứa nixGL) và dọn symlink icon gãy
+   rm -rf ~/.nix-profile ~/.local/state/nix/profiles/profile*
    find ~/.local/share/icons -xtype l -delete
-   nix profile add ~/dev/dotfiles#default
 
    # 3. Xóa subvolume OSTree cũ (subvol=root và /home/nix cũ) để thu hồi dung lượng
    sudo mkdir -p /mnt/btrfs

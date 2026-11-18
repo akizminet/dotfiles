@@ -4,6 +4,7 @@
 
 import sys
 import os
+import glob
 import subprocess
 import threading
 import pwd
@@ -343,10 +344,10 @@ class VpnPlugin(object):
     def _build_args(self, connection):
         vpn_data = connection.get('vpn', {}).get('data', {})
         config_path = vpn_data.get('config')
-        fallback_path = "/etc/openvpn/phamnv.ovpn"
-        if os.path.exists(fallback_path):
-            config_path = fallback_path
-        elif not config_path and not vpn_data.get('ca'):
+        conn_id = connection.get('connection', {}).get('id', '')
+        candidates = ([f"/etc/openvpn/{conn_id}.ovpn"] if conn_id else []) + sorted(glob.glob("/etc/openvpn/*.ovpn"))
+        fallback_path = next((p for p in candidates if os.path.exists(p)), None)
+        if fallback_path:
             config_path = fallback_path
 
         args = ['stdbuf', '-oL', 'openvpn']
@@ -482,7 +483,10 @@ class VpnPlugin(object):
                             gui_user = user
                             break
                 if not gui_user:
-                    gui_user = "phamnv"
+                    normal_users = [p.pw_name for p in pwd.getpwall() if 1000 <= p.pw_uid < 65534]
+                    gui_user = normal_users[0] if normal_users else None
+                if not gui_user:
+                    raise RuntimeError("No active GUI or regular user found for fallback browser launch")
                     
                 print(f"[Service] Opening browser via fallback as user: {gui_user}", flush=True)
                 uid = pwd.getpwnam(gui_user).pw_uid

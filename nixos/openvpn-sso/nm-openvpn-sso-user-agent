@@ -4,9 +4,33 @@
 
 import sys
 import os
+import getpass
 import shutil
 import subprocess
 from gi.repository import Gio, GLib
+
+def ensure_user_profile_env():
+    user = os.environ.get("USER") or getpass.getuser()
+    home = os.path.expanduser("~")
+
+    extra_bins = [
+        f"/etc/profiles/per-user/{user}/bin",
+        os.path.join(home, ".nix-profile/bin"),
+        os.path.join(home, ".local/bin"),
+        "/run/wrappers/bin",
+        "/run/current-system/sw/bin",
+    ]
+    current_path = [p for p in os.environ.get("PATH", "").split(":") if p]
+    os.environ["PATH"] = ":".join(extra_bins + [p for p in current_path if p not in extra_bins])
+
+    extra_shares = [
+        f"/etc/profiles/per-user/{user}/share",
+        os.path.join(home, ".nix-profile/share"),
+        os.path.join(home, ".local/share"),
+        "/run/current-system/sw/share",
+    ]
+    current_xdg = [p for p in os.environ.get("XDG_DATA_DIRS", "").split(":") if p]
+    os.environ["XDG_DATA_DIRS"] = ":".join(extra_shares + [p for p in current_xdg if p not in extra_shares])
 
 def launch_browser(url):
     # Strategy 1: If inside Distrobox, invoke host's gio open or xdg-open via distrobox-host-exec
@@ -38,6 +62,7 @@ def on_signal(connection, sender_name, object_path, interface_name, signal_name,
             print(f"[UserAgent] Failed to handle SSO URL: {e}", flush=True)
 
 def main():
+    ensure_user_profile_env()
     print("[UserAgent] Starting NetworkManager OpenVPN SSO User Agent...", flush=True)
     try:
         conn = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)

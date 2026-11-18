@@ -1,4 +1,4 @@
-{ pkgs, akquick, ... }:
+{ lib, pkgs, akquick, hostSpec, ... }:
 
 let
   pythonGio = pkgs.python3.withPackages (ps: [ ps.pygobject3 ]);
@@ -10,9 +10,9 @@ let
   } ''
     mkdir -p $out/bin $out/lib/NetworkManager/VPN $out/share/dbus-1/system.d
 
-    install -m 0755 ${./openvpn-sso/nm-openvpn-sso-helper} $out/bin/.nm-openvpn-sso-helper-unwrapped
-    install -m 0755 ${./openvpn-sso/nm-openvpn-sso-service} $out/bin/.nm-openvpn-sso-service-unwrapped
-    install -m 0755 ${./openvpn-sso/nm-openvpn-sso-user-agent} $out/bin/.nm-openvpn-sso-user-agent-unwrapped
+    install -m 0755 ${../openvpn-sso/nm-openvpn-sso-helper} $out/bin/.nm-openvpn-sso-helper-unwrapped
+    install -m 0755 ${../openvpn-sso/nm-openvpn-sso-service} $out/bin/.nm-openvpn-sso-service-unwrapped
+    install -m 0755 ${../openvpn-sso/nm-openvpn-sso-user-agent} $out/bin/.nm-openvpn-sso-user-agent-unwrapped
 
     sed -i "s|/usr/local/bin/nm-openvpn-sso-helper|$out/bin/nm-openvpn-sso-helper|g" \
       $out/bin/.nm-openvpn-sso-service-unwrapped
@@ -21,8 +21,7 @@ let
       sed -i "1s|^#!.*|#!${pythonGio}/bin/python3|" $out/bin/.$prog-unwrapped
       makeWrapper $out/bin/.$prog-unwrapped $out/bin/$prog \
         --prefix GI_TYPELIB_PATH : "${pkgs.glib.out}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0" \
-        --prefix PATH : "/run/wrappers/bin:/etc/profiles/per-user/phamnv/bin:/run/current-system/sw/bin:${pkgs.lib.makeBinPath [ pkgs.coreutils pkgs.openvpn pkgs.systemd pkgs.xdg-utils pkgs.glib ]}" \
-        --prefix XDG_DATA_DIRS : "/etc/profiles/per-user/phamnv/share:/run/current-system/sw/share"
+        --prefix PATH : "/run/wrappers/bin:/run/current-system/sw/bin:${pkgs.lib.makeBinPath [ pkgs.coreutils pkgs.openvpn pkgs.systemd pkgs.xdg-utils pkgs.glib ]}"
     done
 
     cat > $out/lib/NetworkManager/VPN/nm-openvpn-sso-service.name <<'EOF'
@@ -46,7 +45,7 @@ EOF
       -e "s|@authDialog@|${pkgs.networkmanager-openvpn}/libexec/nm-openvpn-auth-dialog|g" \
       $out/lib/NetworkManager/VPN/nm-openvpn-sso-service.name
 
-    install -m 0644 ${./openvpn-sso/org.freedesktop.NetworkManager.openvpn-sso.conf} \
+    install -m 0644 ${../openvpn-sso/org.freedesktop.NetworkManager.openvpn-sso.conf} \
       $out/share/dbus-1/system.d/org.freedesktop.NetworkManager.openvpn-sso.conf
   '';
 
@@ -63,10 +62,6 @@ EOF
   };
 in
 {
-  imports = [
-    ./hardware-configuration.nix
-  ];
-
   # Boot & Swap
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -76,21 +71,23 @@ in
   system.etc.overlay.enable = true;
   system.etc.overlay.mutable = true;
   services.userborn.enable = true;
-  environment.etc."machine-id".text = "e766ad57c4654c84869e2929fd73e0a0\n";
+  environment.etc."machine-id" = lib.mkIf (hostSpec.machineId != null) {
+    text = "${hostSpec.machineId}\n";
+  };
 
   # Nix settings & nh helper
   nix.settings = {
     experimental-features = [ "nix-command" "flakes" ];
-    trusted-users = [ "root" "phamnv" ];
+    trusted-users = [ "root" hostSpec.username ];
   };
   programs.nh = {
     enable = true;
-    flake = "/home/phamnv/dev/dotfiles";
+    flake = hostSpec.dotfilesDir;
   };
   nixpkgs.config.allowUnfree = true;
 
   # Networking & Time
-  networking.hostName = "homepc";
+  networking.hostName = hostSpec.hostName;
   networking.networkmanager = {
     enable = true;
     plugins = [
@@ -100,16 +97,9 @@ in
   };
   systemd.services.NetworkManager.restartTriggers = [ nmOpenvpnSso ];
   time.timeZone = "Asia/Ho_Chi_Minh";
-  time.hardwareClockInLocalTime = true;
+  time.hardwareClockInLocalTime = hostSpec.hardwareClockInLocalTime;
 
-  # Hardware (Intel UHD 730), Audio & Bluetooth
-  hardware.graphics = {
-    enable = true;
-    extraPackages = with pkgs; [
-      intel-media-driver
-      vpl-gpu-rt
-    ];
-  };
+  # Audio & Bluetooth
   hardware.bluetooth.enable = true;
 
   services.pipewire = {
@@ -212,7 +202,7 @@ in
     ];
   };
 
-  # Minimal base OS & session packages (user apps live in flake.nix -> nix profile)
+  # Minimal base OS & session packages (user apps live in user-packages.nix)
   environment.systemPackages = with pkgs; [
     adwaita-icon-theme
     akquick.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -235,41 +225,46 @@ in
     zapretWrapped
   ];
 
-  # Declarative dotfile symlinks (replaces setup.sh)
+  # Declarative dotfile symlinks
   systemd.user.tmpfiles.rules = [
-    "L+ %h/.config/hypr - - - - %h/dev/dotfiles/hypr"
-    "L+ %h/.config/sway - - - - %h/dev/dotfiles/sway"
-    "L+ %h/.config/ironbar - - - - %h/dev/dotfiles/ironbar"
-    "L+ %h/.config/rofi - - - - %h/dev/dotfiles/rofi"
-    "L+ %h/.config/foot - - - - %h/dev/dotfiles/foot"
-    "L+ %h/.config/gtk-3.0 - - - - %h/dev/dotfiles/gtk-3.0"
-    "L+ %h/.config/fcitx5 - - - - %h/dev/dotfiles/fcitx5"
-    "L+ %h/.config/satty - - - - %h/dev/dotfiles/satty"
-    "L+ %h/.config/swaync - - - - %h/dev/dotfiles/swaync"
-    "L+ %h/.config/autostart - - - - %h/dev/dotfiles/autostart"
-    "L+ %h/.config/systemd - - - - %h/dev/dotfiles/systemd"
-    "L+ %h/.config/environment.d - - - - %h/dev/dotfiles/environment.d"
-    "L+ %h/.config/xdg-desktop-portal - - - - %h/dev/dotfiles/xdg-desktop-portal"
-    "L+ %h/.config/mimeapps.list - - - - %h/dev/dotfiles/mimeapps.list"
-    "L+ %h/.local/bin/antigravity-launcher.sh - - - - %h/dev/dotfiles/bin/antigravity-launcher.sh"
-    "L+ %h/.local/bin/restart-antigravity.sh - - - - %h/dev/dotfiles/bin/restart-antigravity.sh"
-    "L+ %h/.local/bin/screenshot - - - - %h/dev/dotfiles/bin/screenshot"
-    "L+ %h/.local/bin/ts-rustdesk-forward - - - - %h/dev/dotfiles/bin/ts-rustdesk-forward"
+    "L+ %h/.config/hypr - - - - ${hostSpec.dotfilesDir}/hypr"
+    "L+ %h/.config/sway - - - - ${hostSpec.dotfilesDir}/sway"
+    "L+ %h/.config/ironbar - - - - ${hostSpec.dotfilesDir}/ironbar"
+    "L+ %h/.config/rofi - - - - ${hostSpec.dotfilesDir}/rofi"
+    "L+ %h/.config/foot - - - - ${hostSpec.dotfilesDir}/foot"
+    "L+ %h/.config/gtk-3.0 - - - - ${hostSpec.dotfilesDir}/gtk-3.0"
+    "L+ %h/.config/fcitx5 - - - - ${hostSpec.dotfilesDir}/fcitx5"
+    "L+ %h/.config/satty - - - - ${hostSpec.dotfilesDir}/satty"
+    "L+ %h/.config/swaync - - - - ${hostSpec.dotfilesDir}/swaync"
+    "L+ %h/.config/autostart - - - - ${hostSpec.dotfilesDir}/autostart"
+    "L+ %h/.config/systemd - - - - ${hostSpec.dotfilesDir}/systemd"
+    "L+ %h/.config/environment.d - - - - ${hostSpec.dotfilesDir}/environment.d"
+    "L+ %h/.config/xdg-desktop-portal - - - - ${hostSpec.dotfilesDir}/xdg-desktop-portal"
+    "L+ %h/.config/mimeapps.list - - - - ${hostSpec.dotfilesDir}/mimeapps.list"
+    "L+ %h/.local/bin/antigravity-launcher.sh - - - - ${hostSpec.dotfilesDir}/bin/antigravity-launcher.sh"
+    "L+ %h/.local/bin/restart-antigravity.sh - - - - ${hostSpec.dotfilesDir}/bin/restart-antigravity.sh"
+    "L+ %h/.local/bin/screenshot - - - - ${hostSpec.dotfilesDir}/bin/screenshot"
+    "L+ %h/.local/bin/ts-rustdesk-forward - - - - ${hostSpec.dotfilesDir}/bin/ts-rustdesk-forward"
     "L+ %h/.local/bin/antigravity - - - - %h/opt/antigravity/antigravity"
     "L+ %h/.local/bin/antigravity-update - - - - %h/dev/workstation/update_antigravity.py"
-    "L+ %h/.local/share/applications/antigravity.desktop - - - - %h/dev/dotfiles/applications/antigravity.desktop"
+    "L+ %h/.local/share/applications/antigravity.desktop - - - - ${hostSpec.dotfilesDir}/applications/antigravity.desktop"
   ];
 
-  # User account matching Fedora UID/GID (1000:1000)
-  users.groups.phamnv.gid = 1000;
-  users.users.phamnv = {
+  # User account matching UID/GID (1000:1000)
+  users.groups.${hostSpec.username}.gid = 1000;
+  users.users.${hostSpec.username} = {
     isNormalUser = true;
     uid = 1000;
-    group = "phamnv";
-    description = "Nguyen Van Pham";
-    hashedPasswordFile = "/var/lib/nixos/phamnv-password-hash";
+    group = hostSpec.username;
+    description = hostSpec.userDescription;
     extraGroups = [ "wheel" "networkmanager" "video" "audio" "kvm" "input" ];
-  };
+  } // (
+    if hostSpec.hashedPasswordFile != null then {
+      hashedPasswordFile = hostSpec.hashedPasswordFile;
+    } else {
+      initialPassword = "nixos";
+    }
+  );
   security.sudo.wheelNeedsPassword = false;
 
   system.stateVersion = "26.11";

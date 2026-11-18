@@ -1,22 +1,27 @@
-# Dotfiles & NixOS Configuration (`homepc`)
+# Dotfiles & Portable NixOS Configuration
 
-Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sway, chuyển đổi trực tiếp từ Fedora OSTree (`uBlue`) không cần USB boot, giữ tính chất immutable ở cả `/nix/store` và `/etc` (qua `erofs` / `composefs` overlay).
+Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sway, tách bạch module dùng chung và cấu hình riêng theo từng máy, giữ tính chất immutable ở cả `/nix/store` và `/etc` (qua `erofs` / `composefs` overlay).
 
 ---
 
-## 1. Cấu trúc 2 lớp (Base OS tách riêng với User Apps, đồng bộ 1 lệnh)
+## 1. Cấu trúc module đa máy (Portable `mkHost` + 2 lớp OS / User Apps)
 
 - **`flake.nix` & `flake.lock`:**
-  - **Cấu hình máy (`nixosConfigurations.homepc` / `workstation`):** Khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
-  - **User Apps & CLI Dev Tools (`userPackagesModule` -> `users.users.phamnv.packages`):** Khai báo toàn bộ ứng dụng cá nhân (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) trực tiếp vào profile riêng của user tại `/etc/profiles/per-user/phamnv` — tách khỏi `environment.systemPackages` (`/run/current-system/sw`) nhưng vẫn đồng bộ 100% cùng driver `Mesa` và rollback cùng generation khi chạy `nh os switch` (không dùng `nix profile` rời).
-- **`nixos/configuration.nix`:** Thuần **Base OS & Wayland Session lõi**:
+  - Khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
+  - Cung cấp hàm **`mkHost`** nhận `hostSpec` (`hostName`, `username`, `dotfilesDir`, `cpu`, `gpu`, `bootLabel`, `rootLabel`, `machineId`, `hashedPasswordFile`, `hardwareClockInLocalTime`, `extraModules`).
+  - Khai báo sẵn:
+    - `homepc` (và alias `workstation`): Cấu hình cho máy `homepc` (Intel CPU/GPU, giữ `machine-id` và `hashedPasswordFile` từ lúc migrate).
+    - `generic`: Profile chuẩn để cài thẳng lên bất kỳ máy mới nào dùng label ổ đĩa `EFI` / `NIXOS` (mật khẩu khởi tạo `nixos`, đổi ngay sau khi đăng nhập).
+- **`nixos/modules/base.nix`:** Thuần **Base OS & Wayland Session lõi** dùng tham số từ `hostSpec`:
   - Bootloader `systemd-boot` + `zramSwap`.
   - Immutable `/etc` overlay (`system.etc.overlay.enable = true`, `mutable = true` với lớp ghi tách riêng tại `/.rw-etc/upper`) kết hợp `services.userborn.enable = true`.
-  - `programs.nh` (`nh os switch` tự dùng flake mặc định, không cần gõ `sudo` hay `--flake`) và `trusted-users`.
-  - Phần cứng Intel UHD 730 (`hardware.graphics` + `intel-media-driver`, `vpl-gpu-rt`), PipeWire, Bluetooth, NetworkManager + plugin **`nm-openvpn-sso`** đóng gói native (`nixos/openvpn-sso/`).
+  - `programs.nh` (`nh os switch` tự trỏ `hostSpec.dotfilesDir`), `trusted-users`, và `nixpkgs.config.allowUnfree = true`.
+  - PipeWire, Bluetooth, NetworkManager + plugin **`nm-openvpn-sso`** (`nixos/openvpn-sso/`, tự dò user/session lúc runtime, không hardcode tên user).
   - Tương thích FHS cho binary tải ngoài (như `~/opt/antigravity`) và script thông qua `programs.nix-ld` + `services.envfs`.
-  - Core Wayland session (`hyprland`, `hyprlock` với PAM, `sway`, `fcitx5` tiếng Việt, font chữ, `ironbar`, `rofi`, `foot`, `akquick`), `systemd.user.tmpfiles.rules` (tự nối toàn bộ symlink dotfiles thay cho `setup.sh`), và tài khoản `phamnv` (`uid=1000`, `gid=1000`, `gnome-keyring` + `machine-id`).
-- **`nixos/hardware-configuration.nix`:** Cấu hình mountpoint Btrfs (`subvol=nixos`, `subvol=nix`, `subvol=home`) và EFI `/boot`.
+  - Core Wayland session (`hyprland`, `hyprlock` với PAM, `sway`, `fcitx5` tiếng Việt, font chữ, `ironbar`, `rofi`, `foot`, `akquick`), `systemd.user.tmpfiles.rules` (tự nối symlink dotfiles theo `${hostSpec.dotfilesDir}`), và tài khoản `${hostSpec.username}` (`uid=1000`, `gid=1000`).
+- **`nixos/modules/hardware-generic.nix`:** Mountpoint Btrfs chuẩn hóa theo label `/dev/disk/by-label/${hostSpec.rootLabel}` (`subvol=nixos`, `subvol=nix`, `subvol=home`) và EFI `/dev/disk/by-label/${hostSpec.bootLabel}`, tự bật microcode / KVM / VA-API driver (`intel-media-driver`, `vpl-gpu-rt`) dựa theo `hostSpec.cpu` và `hostSpec.gpu`.
+- **`nixos/modules/user-packages.nix`:** Danh sách GUI & CLI Dev Tools (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) gắn vào `users.users.${hostSpec.username}.packages` (`/etc/profiles/per-user/${hostSpec.username}`), tách khỏi `environment.systemPackages` nhưng vẫn rollback cùng generation.
+- **`nixos/hosts/<hostName>/`:** Thư mục override riêng cho từng máy (ví dụ [nixos/hosts/homepc/default.nix](nixos/hosts/homepc/default.nix)).
 
 ### Lệnh sử dụng hằng ngày
 
@@ -30,6 +35,20 @@ nix flake update && nh os switch
 # Kiểm tra những file nào bị thay đổi runtime trong /etc so với cấu hình gốc
 ls -la /.rw-etc/upper
 ```
+
+### Triển khai sang máy mới (không cần sửa UUID)
+
+1. **Cách nhanh (`nixosConfigurations.generic`):**
+   - Format phân vùng EFI nhãn **`EFI`** (`mkfs.vfat -F 32 -n EFI ...`) và phân vùng Btrfs nhãn **`NIXOS`** (`mkfs.btrfs -L NIXOS ...`) với 3 subvolume `nixos`, `nix`, `home`.
+   - Clone repo về `/home/phamnv/dev/dotfiles`, mount ổ đĩa vào `/mnt`, rồi chạy thẳng:
+     ```bash
+     sudo nixos-install --flake /mnt/home/phamnv/dev/dotfiles#generic
+     ```
+   - Đăng nhập bằng mật khẩu tạm `nixos` và chạy `passwd` để đổi mật khẩu.
+
+2. **Cách tùy biến theo từng máy (`nixos/hosts/<new-host>/`):**
+   - Tạo thư mục `nixos/hosts/<new-host>/default.nix` (nếu có phần cứng hoặc `fileSystems` đặc thù ghi đè `lib.mkDefault`).
+   - Thêm một dòng gọi `mkHost` trong `flake.nix` (chỉ định `hostName`, `username`, `cpu = "amd"`, `gpu = "amd"`, v.v.), rồi chạy `sudo nixos-install --flake .#<new-host>`.
 
 ---
 

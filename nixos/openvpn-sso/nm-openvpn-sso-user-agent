@@ -33,8 +33,8 @@ def ensure_user_profile_env():
     os.environ["XDG_DATA_DIRS"] = ":".join(extra_shares + [p for p in current_xdg if p not in extra_shares])
 
 def launch_browser(url):
-    # Strategy 1: If inside Distrobox, invoke host's gio open or xdg-open via distrobox-host-exec
-    if shutil.which("distrobox-host-exec"):
+    # Strategy 1: Only when actually inside a Distrobox/Podman container, delegate to host
+    if os.path.exists("/run/.containerenv") and shutil.which("distrobox-host-exec"):
         for cmd in [["distrobox-host-exec", "gio", "open", url], ["distrobox-host-exec", "xdg-open", url]]:
             try:
                 subprocess.Popen(cmd)

@@ -42,13 +42,19 @@
           null;
 
       passwordHashPath = "/var/lib/nixos/${username}-password-hash";
-      hashedPasswordFile =
-        if builtins.pathExists passwordHashPath then passwordHashPath else null;
+      hasPasswordHash = builtins.any builtins.pathExists [
+        passwordHashPath
+        "/var/mnt/nixos${passwordHashPath}"
+        "/mnt${passwordHashPath}"
+      ];
+      hashedPasswordFile = if hasPasswordHash then passwordHashPath else null;
 
       hardwareConfigCandidates = [
         (builtins.getEnv "NIXOS_HARDWARE_CONFIG")
         "/etc/nixos/hardware-configuration.nix"
+        "/var/mnt/nixos/.rw-etc/upper/nixos/hardware-configuration.nix"
         "/var/mnt/nixos/etc/nixos/hardware-configuration.nix"
+        "/mnt/.rw-etc/upper/nixos/hardware-configuration.nix"
         "/mnt/etc/nixos/hardware-configuration.nix"
       ];
       hardwareConfigPath = lib.findFirst
@@ -79,7 +85,8 @@
     {
       nixosConfigurations = {
         default = mkSystem hostName;
-        workstation = mkSystem hostName;
+        workstation = mkSystem "workstation";
+      } // {
         ${hostName} = mkSystem hostName;
       };
     };

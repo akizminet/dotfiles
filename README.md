@@ -31,14 +31,16 @@ ls -la /.rw-etc/upper
 ### Triển khai sang máy mới (không cần sửa repo)
 
 1. Mount các phân vùng của máy mới vào `/mnt` (không bắt buộc đặt label cố định).
-2. Sinh cấu hình phần cứng riêng của máy mới vào `/mnt/etc/nixos/hardware-configuration.nix` và đặt hostname vào `/mnt/etc/hostname`:
+2. Sinh cấu hình phần cứng riêng của máy mới vào `/mnt/.rw-etc/upper/nixos/hardware-configuration.nix` (lưu thẳng trong `upperdir` để `system.etc.overlay` không che mất `/etc/nixos/hardware-configuration.nix` sau khi boot) và đặt hostname (hoặc truyền `NIXOS_HOSTNAME`):
    ```bash
-   sudo nixos-generate-config --root /mnt --show-hardware-config | sudo tee /mnt/etc/nixos/hardware-configuration.nix >/dev/null
+   sudo mkdir -p /mnt/.rw-etc/upper/nixos
+   sudo nixos-generate-config --root /mnt --show-hardware-config | sudo tee /mnt/.rw-etc/upper/nixos/hardware-configuration.nix >/dev/null
+   # Nếu tách subvolume riêng cho /nix, nhớ thêm `neededForBoot = true;` vào block `fileSystems."/nix"`!
    echo "my-laptop" | sudo tee /mnt/etc/hostname >/dev/null
    ```
 3. Clone dotfiles vào `~/dev/dotfiles` rồi cài thẳng với `--impure`:
    ```bash
-   sudo nixos-install --flake ~/dev/dotfiles#default --impure --root /mnt
+   sudo NIXOS_HOSTNAME="my-laptop" nixos-install --flake ~/dev/dotfiles#default --impure --root /mnt
    ```
 4. Đăng nhập lần đầu bằng mật khẩu tạm `nixos` rồi đổi mật khẩu (`passwd`).
 
@@ -123,15 +125,16 @@ nixGLIntel ./result-vm/bin/run-*-vm
    sudo btrfs subvolume create /var/mnt/btrfs/nix
 
    sudo mount -o subvol=nixos,compress=zstd:1,noatime /dev/nvme0n1p3 /var/mnt/nixos
-   sudo mkdir -p /var/mnt/nixos/{nix,home,boot,etc/nixos}
+   sudo mkdir -p /var/mnt/nixos/{nix,home,boot,.rw-etc/upper/nixos}
    sudo mount -o subvol=nix,compress=zstd:1,noatime /dev/nvme0n1p3 /var/mnt/nixos/nix
    sudo mount -o subvol=home,compress=zstd:1,relatime /dev/nvme0n1p3 /var/mnt/nixos/home
    sudo mount /dev/nvme0n1p1 /var/mnt/nixos/boot
 
-   # Sinh cấu hình phần cứng theo đúng UUID/CPU của máy
+   # Sinh cấu hình phần cứng theo đúng UUID/CPU của máy (ghi vào .rw-etc/upper để giữ lại sau khi boot với system.etc.overlay)
    sudo nix shell --inputs-from "path:$HOME/dev/dotfiles" nixpkgs#nixos-install-tools \
      -c nixos-generate-config --root /var/mnt/nixos --show-hardware-config \
-     | sudo tee /var/mnt/nixos/etc/nixos/hardware-configuration.nix >/dev/null
+     | sudo tee /var/mnt/nixos/.rw-etc/upper/nixos/hardware-configuration.nix >/dev/null
+   # Nhớ thêm `neededForBoot = true;` vào block `fileSystems."/nix"` vì /nix là subvolume tách riêng!
    ```
 
 2. **Chép password hash (để login và mở khóa `login.keyring`):**
@@ -143,7 +146,7 @@ nixGLIntel ./result-vm/bin/run-*-vm
 
 3. **Build sẵn system closure với quyền user thường (trỏ đúng `NIXOS_HARDWARE_CONFIG` và `NIXOS_HOSTNAME`):**
    ```bash
-   NIXOS_HOSTNAME="$(cat /etc/hostname)" NIXOS_HARDWARE_CONFIG="/var/mnt/nixos/etc/nixos/hardware-configuration.nix" \
+   NIXOS_HOSTNAME="$(cat /etc/hostname)" NIXOS_HARDWARE_CONFIG="/var/mnt/nixos/.rw-etc/upper/nixos/hardware-configuration.nix" \
      nix build ~/dev/dotfiles#nixosConfigurations.default.config.system.build.toplevel --impure -o result-system
    ```
 

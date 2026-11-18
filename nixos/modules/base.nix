@@ -60,6 +60,20 @@ EOF
         --set-default ZAPRET_CONFIG "/etc/zapret/config"
     '';
   };
+
+  tailscaleBin = pkgs.writeShellScriptBin "tailscale" ''
+    SOCKET="''${XDG_RUNTIME_DIR:-/run/user/$UID}/tailscale/tailscaled.sock"
+    if [[ "$*" != *--socket* ]] && [ -S "$SOCKET" ]; then
+      exec "${pkgs.tailscale}/bin/tailscale" --socket="$SOCKET" "$@"
+    else
+      exec "${pkgs.tailscale}/bin/tailscale" "$@"
+    fi
+  '';
+
+  tailscaleWrapped = pkgs.symlinkJoin {
+    name = "tailscale-wrapped";
+    paths = [ tailscaleBin pkgs.tailscale ];
+  };
 in
 {
   # Boot & Swap
@@ -246,7 +260,7 @@ in
     satty
     slurp
     swaynotificationcenter
-    tailscale
+    tailscaleWrapped
     wl-clipboard
     zapretWrapped
   ];

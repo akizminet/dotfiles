@@ -89,6 +89,10 @@ in
   environment.etc."machine-id" = lib.mkIf (hostSpec.machineId != null) {
     text = "${hostSpec.machineId}\n";
   };
+  environment.etc."ssl/cert.pem".source = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+  environment.etc."ssl/ca-bundle.pem".source = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+  environment.etc."pki/tls/cacert.pem".source = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+  environment.etc."pki/ca-trust/extracted/pem/tls-ca-bundle.pem".source = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
 
   # Nix settings & nh helper
   nix.settings = {
@@ -213,7 +217,11 @@ in
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
   programs.sway.enable = true;
-  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
+    NIX_SSL_CERT_FILE = "/etc/ssl/certs/ca-bundle.crt";
+  };
 
   i18n.defaultLocale = "en_US.UTF-8";
   i18n.inputMethod = {

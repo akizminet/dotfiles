@@ -25,6 +25,10 @@ local home = os.getenv("HOME") or "/home/phamnv"
 local user = os.getenv("USER") or "phamnv"
 hl.env("PATH", "/run/wrappers/bin:" .. home .. "/.local/bin:/etc/profiles/per-user/" .. user .. "/bin:/run/current-system/sw/bin:/usr/bin:/bin")
 hl.env("XDG_DATA_DIRS", "/etc/profiles/per-user/" .. user .. "/share:/run/current-system/sw/share:" .. home .. "/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/share")
+hl.env("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
+hl.env("NIX_SSL_CERT_FILE", "/etc/ssl/certs/ca-bundle.crt")
+hl.env("NIX_LD", "/run/current-system/sw/share/nix-ld/lib/ld.so")
+hl.env("NIX_LD_LIBRARY_PATH", "/run/current-system/sw/share/nix-ld/lib")
 
 ---------------------
 ---- MY PROGRAMS ----

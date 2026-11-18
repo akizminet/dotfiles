@@ -65,6 +65,7 @@ in
   # Boot & Swap
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  boot.kernelPackages = pkgs.linuxPackages_latest;
   zramSwap.enable = true;
 
   # Immutable-style /etc via composefs/erofs overlay with mutable upperdir (/.rw-etc/upper)

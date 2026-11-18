@@ -217,6 +217,7 @@ in
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
   programs.sway.enable = true;
+  environment.localBinInPath = true;
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";
     SSL_CERT_FILE = "/etc/ssl/certs/ca-certificates.crt";
@@ -286,7 +287,6 @@ in
     "L+ %h/.config/swaync - - - - ${hostSpec.dotfilesDir}/swaync"
     "L+ %h/.config/autostart - - - - ${hostSpec.dotfilesDir}/autostart"
     "L+ %h/.config/systemd - - - - ${hostSpec.dotfilesDir}/systemd"
-    "L+ %h/.config/environment.d - - - - ${hostSpec.dotfilesDir}/environment.d"
     "L+ %h/.config/xdg-desktop-portal - - - - ${hostSpec.dotfilesDir}/xdg-desktop-portal"
     "L+ %h/.config/mimeapps.list - - - - ${hostSpec.dotfilesDir}/mimeapps.list"
     "L+ %h/.local/bin/antigravity-launcher.sh - - - - ${hostSpec.dotfilesDir}/bin/antigravity-launcher.sh"

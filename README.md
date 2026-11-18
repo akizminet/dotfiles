@@ -1,32 +1,24 @@
 # Dotfiles & Portable NixOS Configuration
 
-Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sway, tách bạch module dùng chung và cấu hình riêng theo từng máy, giữ tính chất immutable ở cả `/nix/store` và `/etc` (qua `erofs` / `composefs` overlay).
+Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sway — **không hardcode hostname, UUID, hay label ổ đĩa trong Git**, giữ tính chất immutable ở cả `/nix/store` và `/etc` (qua `erofs` / `composefs` overlay).
 
 ---
 
-## 1. Cấu trúc module đa máy (Portable `mkHost` + 2 lớp OS / User Apps)
+## 1. Cấu trúc tách bạch Repo (Chung) vs Máy (Local `/etc`)
 
-- **`flake.nix` & `flake.lock`:**
-  - Khóa phiên bản `nixpkgs` (`nixos-unstable-small`), `akquick` và `celluloid-src`.
-  - Cung cấp hàm **`mkHost`** nhận `hostSpec` (`hostName`, `username`, `dotfilesDir`, `cpu`, `gpu`, `bootLabel`, `rootLabel`, `machineId`, `hashedPasswordFile`, `hardwareClockInLocalTime`, `extraModules`).
-  - Khai báo sẵn:
-    - `homepc` (và alias `workstation`): Cấu hình cho máy `homepc` (Intel CPU/GPU, giữ `machine-id` và `hashedPasswordFile` từ lúc migrate).
-    - `generic`: Profile chuẩn để cài thẳng lên bất kỳ máy mới nào dùng label ổ đĩa `EFI` / `NIXOS` (mật khẩu khởi tạo `nixos`, đổi ngay sau khi đăng nhập).
-- **`nixos/modules/base.nix`:** Thuần **Base OS & Wayland Session lõi** dùng tham số từ `hostSpec`:
-  - Bootloader `systemd-boot` + `zramSwap`.
-  - Immutable `/etc` overlay (`system.etc.overlay.enable = true`, `mutable = true` với lớp ghi tách riêng tại `/.rw-etc/upper`) kết hợp `services.userborn.enable = true`.
-  - `programs.nh` (`nh os switch` tự trỏ `hostSpec.dotfilesDir`), `trusted-users`, và `nixpkgs.config.allowUnfree = true`.
-  - PipeWire, Bluetooth, NetworkManager + plugin **`nm-openvpn-sso`** (`nixos/openvpn-sso/`, tự dò user/session lúc runtime, không hardcode tên user).
-  - Tương thích FHS cho binary tải ngoài (như `~/opt/antigravity`) và script thông qua `programs.nix-ld` + `services.envfs`.
-  - Core Wayland session (`hyprland`, `hyprlock` với PAM, `sway`, `fcitx5` tiếng Việt, font chữ, `ironbar`, `rofi`, `foot`, `akquick`), `systemd.user.tmpfiles.rules` (tự nối symlink dotfiles theo `${hostSpec.dotfilesDir}`), và tài khoản `${hostSpec.username}` (`uid=1000`, `gid=1000`).
-- **`nixos/modules/hardware-generic.nix`:** Mountpoint Btrfs chuẩn hóa theo label `/dev/disk/by-label/${hostSpec.rootLabel}` (`subvol=nixos`, `subvol=nix`, `subvol=home`) và EFI `/dev/disk/by-label/${hostSpec.bootLabel}`, tự bật microcode / KVM / VA-API driver (`intel-media-driver`, `vpl-gpu-rt`) dựa theo `hostSpec.cpu` và `hostSpec.gpu`.
-- **`nixos/modules/user-packages.nix`:** Danh sách GUI & CLI Dev Tools (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) gắn vào `users.users.${hostSpec.username}.packages` (`/etc/profiles/per-user/${hostSpec.username}`), tách khỏi `environment.systemPackages` nhưng vẫn rollback cùng generation.
-- **`nixos/hosts/<hostName>/`:** Thư mục override riêng cho từng máy (ví dụ [nixos/hosts/homepc/default.nix](nixos/hosts/homepc/default.nix)).
+- **Trong Git repo (dùng chung cho mọi máy):**
+  - **[flake.nix](file:///home/phamnv/dev/dotfiles/flake.nix) & `flake.lock`:** Tự đọc lúc evaluate (`--impure`): hostname từ `/etc/hostname` (hoặc `NIXOS_HOSTNAME`), user từ `$SUDO_USER` / `$USER`, `machine-id` từ `/etc/machine-id`, file hash mật khẩu `/var/lib/nixos/<user>-password-hash`, và cấu hình phần cứng từ `/etc/nixos/hardware-configuration.nix` (fallback sang `/var/mnt/nixos/etc/nixos/...` hoặc `/mnt/etc/nixos/...` khi cài mới).
+  - **[nixos/modules/base.nix](file:///home/phamnv/dev/dotfiles/nixos/modules/base.nix):** Base OS & Wayland session lõi (`systemd-boot`, `zramSwap`, immutable `/etc` overlay + `userborn`, NetworkManager + **`nm-openvpn-sso`** tự dò user/session lúc runtime, `nix-ld` + `envfs`, `hyprland`, `sway`, `fcitx5`, `tmpfiles` symlink dotfiles). Bọc sẵn `nh` để `nh os ...` tự truyền `--impure`, và tự bật driver VA-API Intel (`intel-media-driver`, `vpl-gpu-rt`) khi phát hiện `kvm-intel` trong `hardware-configuration.nix`.
+  - **[nixos/modules/user-packages.nix](file:///home/phamnv/dev/dotfiles/nixos/modules/user-packages.nix):** Danh sách GUI & CLI Dev Tools (`google-chrome`, `firefox`, `celluloid`, `libreoffice`, `telegram-desktop`, `dbeaver-bin`, `kubectl`, `helm`, `gh`, `nodejs_26`, ...) gắn vào `/etc/profiles/per-user/<user>` — đồng bộ Mesa và rollback cùng generation khi chạy `nh os switch`.
+- **Nằm ngoài Git trên từng máy (`/etc` / `/.rw-etc/upper/`):**
+  - `/etc/nixos/hardware-configuration.nix` (sinh tự động bằng `nixos-generate-config` theo đúng UUID/label/CPU của máy đó; có thể đặt `time.hardwareClockInLocalTime = true;` nếu dual-boot Windows).
+  - `/etc/hostname` & `/etc/machine-id`: định danh riêng của từng máy.
+  - `/var/lib/nixos/<user>-password-hash` (tùy chọn; nếu chưa có sẽ dùng `initialPassword = "nixos"`).
 
 ### Lệnh sử dụng hằng ngày
 
 ```bash
-# Áp dụng thay đổi cấu hình OS lẫn User Apps (không cần gõ sudo hay --flake)
+# Áp dụng thay đổi cấu hình OS lẫn User Apps (wrapper nh tự truyền --impure và đọc flake mặc định)
 nh os switch
 
 # Cập nhật toàn bộ nixpkgs/inputs trong flake.lock rồi áp dụng đồng bộ
@@ -36,19 +28,19 @@ nix flake update && nh os switch
 ls -la /.rw-etc/upper
 ```
 
-### Triển khai sang máy mới (không cần sửa UUID)
+### Triển khai sang máy mới (không cần sửa repo)
 
-1. **Cách nhanh (`nixosConfigurations.generic`):**
-   - Format phân vùng EFI nhãn **`EFI`** (`mkfs.vfat -F 32 -n EFI ...`) và phân vùng Btrfs nhãn **`NIXOS`** (`mkfs.btrfs -L NIXOS ...`) với 3 subvolume `nixos`, `nix`, `home`.
-   - Clone repo về `/home/phamnv/dev/dotfiles`, mount ổ đĩa vào `/mnt`, rồi chạy thẳng:
-     ```bash
-     sudo nixos-install --flake /mnt/home/phamnv/dev/dotfiles#generic
-     ```
-   - Đăng nhập bằng mật khẩu tạm `nixos` và chạy `passwd` để đổi mật khẩu.
-
-2. **Cách tùy biến theo từng máy (`nixos/hosts/<new-host>/`):**
-   - Tạo thư mục `nixos/hosts/<new-host>/default.nix` (nếu có phần cứng hoặc `fileSystems` đặc thù ghi đè `lib.mkDefault`).
-   - Thêm một dòng gọi `mkHost` trong `flake.nix` (chỉ định `hostName`, `username`, `cpu = "amd"`, `gpu = "amd"`, v.v.), rồi chạy `sudo nixos-install --flake .#<new-host>`.
+1. Mount các phân vùng của máy mới vào `/mnt` (không bắt buộc đặt label cố định).
+2. Sinh cấu hình phần cứng riêng của máy mới vào `/mnt/etc/nixos/hardware-configuration.nix` và đặt hostname vào `/mnt/etc/hostname`:
+   ```bash
+   sudo nixos-generate-config --root /mnt --show-hardware-config | sudo tee /mnt/etc/nixos/hardware-configuration.nix >/dev/null
+   echo "my-laptop" | sudo tee /mnt/etc/hostname >/dev/null
+   ```
+3. Clone dotfiles vào `~/dev/dotfiles` rồi cài thẳng với `--impure`:
+   ```bash
+   sudo nixos-install --flake ~/dev/dotfiles#default --impure --root /mnt
+   ```
+4. Đăng nhập lần đầu bằng mật khẩu tạm `nixos` rồi đổi mật khẩu (`passwd`).
 
 ---
 
@@ -111,22 +103,17 @@ Kiểm tra cấu hình NixOS (`kernel`, `systemd initrd`, `/etc` overlay, user/g
 
 ```bash
 # Build VM test
-nix build /home/phamnv/dev/dotfiles#nixosConfigurations.workstation.config.system.build.vm -o result-vm
+nix build ~/dev/dotfiles#nixosConfigurations.default.config.system.build.vm --impure -o result-vm
 
 # Chạy VM (nếu đang trên Fedora cần bọc nixGLIntel cho cửa sổ QEMU)
-nixGLIntel ./result-vm/bin/run-homepc-vm
+nixGLIntel ./result-vm/bin/run-*-vm
 ```
 
 *(Gợi ý: Thêm block `virtualisation.vmVariant` tạm thời với `password = "1234"` và `autologinUser` để test đăng nhập nhanh trong VM).*
 
 #### Tầng 2: Build trước & Cài vào Btrfs subvolume ngay trên Fedora
 
-1. **Build sẵn toàn bộ system closure với quyền user thường:**
-   ```bash
-   nix build /home/phamnv/dev/dotfiles#nixosConfigurations.workstation.config.system.build.toplevel -o result-system
-   ```
-
-2. **Tạo subvolume & mount vào đường dẫn thật `/var/mnt/nixos` (thay UUID/thiết bị đúng với máy bạn):**
+1. **Tạo subvolume, mount vào đường dẫn thật `/var/mnt/nixos` và sinh `hardware-configuration.nix` của máy:**
    ```bash
    sudo setenforce 0
    sudo mkdir -p /var/mnt/btrfs /var/mnt/nixos
@@ -136,17 +123,28 @@ nixGLIntel ./result-vm/bin/run-homepc-vm
    sudo btrfs subvolume create /var/mnt/btrfs/nix
 
    sudo mount -o subvol=nixos,compress=zstd:1,noatime /dev/nvme0n1p3 /var/mnt/nixos
-   sudo mkdir -p /var/mnt/nixos/{nix,home,boot}
+   sudo mkdir -p /var/mnt/nixos/{nix,home,boot,etc/nixos}
    sudo mount -o subvol=nix,compress=zstd:1,noatime /dev/nvme0n1p3 /var/mnt/nixos/nix
    sudo mount -o subvol=home,compress=zstd:1,relatime /dev/nvme0n1p3 /var/mnt/nixos/home
    sudo mount /dev/nvme0n1p1 /var/mnt/nixos/boot
+
+   # Sinh cấu hình phần cứng theo đúng UUID/CPU của máy
+   sudo nix shell --inputs-from "path:$HOME/dev/dotfiles" nixpkgs#nixos-install-tools \
+     -c nixos-generate-config --root /var/mnt/nixos --show-hardware-config \
+     | sudo tee /var/mnt/nixos/etc/nixos/hardware-configuration.nix >/dev/null
    ```
 
-3. **Chép password hash (để login và mở khóa `login.keyring`):**
+2. **Chép password hash (để login và mở khóa `login.keyring`):**
    ```bash
    sudo mkdir -p /var/mnt/nixos/var/lib/nixos
-   sudo awk -F: '$1 == "phamnv" { printf "%s", $2 }' /etc/shadow | sudo tee /var/mnt/nixos/var/lib/nixos/phamnv-password-hash >/dev/null
-   sudo chmod 0600 /var/mnt/nixos/var/lib/nixos/phamnv-password-hash
+   sudo awk -F: -v u="$USER" '$1 == u { printf "%s", $2 }' /etc/shadow | sudo tee /var/mnt/nixos/var/lib/nixos/${USER}-password-hash >/dev/null
+   sudo chmod 0600 /var/mnt/nixos/var/lib/nixos/${USER}-password-hash
+   ```
+
+3. **Build sẵn system closure với quyền user thường (trỏ đúng `NIXOS_HARDWARE_CONFIG` và `NIXOS_HOSTNAME`):**
+   ```bash
+   NIXOS_HOSTNAME="$(cat /etc/hostname)" NIXOS_HARDWARE_CONFIG="/var/mnt/nixos/etc/nixos/hardware-configuration.nix" \
+     nix build ~/dev/dotfiles#nixosConfigurations.default.config.system.build.toplevel --impure -o result-system
    ```
 
 4. **Chạy `nixos-install` (copy gói từ `/nix/store` sang `subvol=nix` và cài `systemd-boot` lên ESP):**

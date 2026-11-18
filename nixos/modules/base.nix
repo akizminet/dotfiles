@@ -1,4 +1,4 @@
-{ lib, pkgs, akquick, hostSpec, ... }:
+{ config, lib, pkgs, akquick, hostSpec, ... }:
 
 let
   pythonGio = pkgs.python3.withPackages (ps: [ ps.pygobject3 ]);
@@ -83,6 +83,23 @@ in
   programs.nh = {
     enable = true;
     flake = hostSpec.dotfilesDir;
+    package = pkgs.symlinkJoin {
+      name = "nh-impure";
+      paths = [ pkgs.nh ];
+      postBuild = ''
+        rm -f $out/bin/nh
+        cp ${pkgs.writeShellScript "nh" ''
+          if [ "$1" = "os" ]; then
+            case " $* " in
+              *" -h "*|*" --help "*|*" --impure "*) exec ${pkgs.nh}/bin/nh "$@" ;;
+              *" -- "*) exec ${pkgs.nh}/bin/nh "$@" --impure ;;
+              *) exec ${pkgs.nh}/bin/nh "$@" -- --impure ;;
+            esac
+          fi
+          exec ${pkgs.nh}/bin/nh "$@"
+        ''} $out/bin/nh
+      '';
+    };
   };
   nixpkgs.config.allowUnfree = true;
 
@@ -97,9 +114,16 @@ in
   };
   systemd.services.NetworkManager.restartTriggers = [ nmOpenvpnSso ];
   time.timeZone = "Asia/Ho_Chi_Minh";
-  time.hardwareClockInLocalTime = hostSpec.hardwareClockInLocalTime;
+  time.hardwareClockInLocalTime = lib.mkDefault false;
 
-  # Audio & Bluetooth
+  # Hardware (auto-detect Intel VA-API when kvm-intel is present), Audio & Bluetooth
+  hardware.graphics = {
+    enable = true;
+    extraPackages = lib.optionals (builtins.elem "kvm-intel" config.boot.kernelModules) (with pkgs; [
+      intel-media-driver
+      vpl-gpu-rt
+    ]);
+  };
   hardware.bluetooth.enable = true;
 
   services.pipewire = {
@@ -256,7 +280,7 @@ in
     isNormalUser = true;
     uid = 1000;
     group = hostSpec.username;
-    description = hostSpec.userDescription;
+    description = hostSpec.username;
     extraGroups = [ "wheel" "networkmanager" "video" "audio" "kvm" "input" ];
   } // (
     if hostSpec.hashedPasswordFile != null then {

@@ -13,65 +13,74 @@
 
   outputs = { self, nixpkgs, celluloid-src, akquick }:
     let
-      mkHost =
-        { hostName
-        , system ? "x86_64-linux"
-        , username ? "phamnv"
-        , userDescription ? "Nguyen Van Pham"
-        , dotfilesDir ? "/home/${username}/dev/dotfiles"
-        , cpu ? "intel"
-        , gpu ? "intel"
-        , bootLabel ? "EFI"
-        , rootLabel ? "NIXOS"
-        , machineId ? null
-        , hashedPasswordFile ? null
-        , hardwareClockInLocalTime ? false
-        , extraModules ? [ ]
-        }:
+      lib = nixpkgs.lib;
+
+      rawHost =
+        let envHost = builtins.getEnv "NIXOS_HOSTNAME"; in
+        if envHost != "" then envHost
+        else if builtins.pathExists /etc/hostname then lib.strings.trim (builtins.readFile /etc/hostname)
+        else "workstation";
+      hostName = if rawHost != "" then rawHost else "workstation";
+
+      rawUser =
+        let sudoUser = builtins.getEnv "SUDO_USER"; in
+        if sudoUser != "" && sudoUser != "root" then sudoUser
+        else
+          let envUser = builtins.getEnv "USER"; in
+          if envUser != "" && envUser != "root" then envUser
+          else "phamnv";
+      username = rawUser;
+
+      dotfilesDir =
+        let envDir = builtins.getEnv "DOTFILES_DIR"; in
+        if envDir != "" then envDir else "/home/${username}/dev/dotfiles";
+
+      machineId =
+        if builtins.pathExists /etc/machine-id then
+          lib.strings.trim (builtins.readFile /etc/machine-id)
+        else
+          null;
+
+      passwordHashPath = "/var/lib/nixos/${username}-password-hash";
+      hashedPasswordFile =
+        if builtins.pathExists passwordHashPath then passwordHashPath else null;
+
+      hardwareConfigCandidates = [
+        (builtins.getEnv "NIXOS_HARDWARE_CONFIG")
+        "/etc/nixos/hardware-configuration.nix"
+        "/var/mnt/nixos/etc/nixos/hardware-configuration.nix"
+        "/mnt/etc/nixos/hardware-configuration.nix"
+      ];
+      hardwareConfigPath = lib.findFirst
+        (p: p != "" && builtins.pathExists p)
+        null
+        hardwareConfigCandidates;
+
+      mkSystem = targetHostName:
         let
           hostSpec = {
-            inherit
-              hostName
-              system
-              username
-              userDescription
-              dotfilesDir
-              cpu
-              gpu
-              bootLabel
-              rootLabel
-              machineId
-              hashedPasswordFile
-              hardwareClockInLocalTime
-              ;
+            hostName = targetHostName;
+            system = "x86_64-linux";
+            inherit username dotfilesDir machineId hashedPasswordFile;
           };
         in
-        nixpkgs.lib.nixosSystem {
-          inherit system;
+        lib.nixosSystem {
+          system = hostSpec.system;
           specialArgs = {
             inherit self celluloid-src akquick hostSpec;
           };
           modules = [
             { nixpkgs.overlays = [ (final: prev: { pcre = prev.pcre2; }) ]; }
-            ./nixos/modules/hardware-generic.nix
             ./nixos/modules/base.nix
             ./nixos/modules/user-packages.nix
-          ] ++ extraModules;
+          ] ++ lib.optional (hardwareConfigPath != null) hardwareConfigPath;
         };
     in
     {
       nixosConfigurations = {
-        homepc = mkHost {
-          hostName = "homepc";
-          cpu = "intel";
-          gpu = "intel";
-          machineId = "e766ad57c4654c84869e2929fd73e0a0";
-          hashedPasswordFile = "/var/lib/nixos/phamnv-password-hash";
-          hardwareClockInLocalTime = true;
-          extraModules = [ ./nixos/hosts/homepc ];
-        };
-        workstation = self.nixosConfigurations.homepc;
-        generic = mkHost { hostName = "workstation"; };
+        default = mkSystem hostName;
+        workstation = mkSystem hostName;
+        ${hostName} = mkSystem hostName;
       };
     };
 }

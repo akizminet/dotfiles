@@ -239,6 +239,8 @@ class VpnPlugin(object):
         print("[Service] Connect called", flush=True)
         self.set_state(STATE_STARTING)
         self._stop_proc()
+        self._config = None
+        self._ip4config = None
 
         cleanup = subprocess.run(
             ["pkill", "-TERM", "-f", "^openvpn .*nm-openvpn-sso-helper"],
@@ -306,6 +308,10 @@ class VpnPlugin(object):
 
     def SetIp4Config(self, config):
         print(f"[Service] SetIp4Config received: {config}", flush=True)
+        if self._ip4config:
+            merged = dict(self._ip4config)
+            merged.update(config)
+            config = merged
         self._ip4config = config
         
         # Convert dictionary to proper GLib Variant types
@@ -438,6 +444,7 @@ class VpnPlugin(object):
         args += [
             '--verb', '3',
             '--setenv', 'IV_SSO', 'webauth,openurl',
+            '--pull-filter', 'ignore', 'auth-nocache',
             '--route-noexec',
             '--ifconfig-noexec',
             '--script-security', '2',

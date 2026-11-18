@@ -192,7 +192,7 @@ in
 
   # System Services
   services.gvfs.enable = true;
-  services.tailscale.enable = true;
+  services.resolved.enable = true;
   services.gnome.gnome-keyring.enable = true;
 
   # Core Wayland Session, Lock Screen (PAM) & Input Method
@@ -246,6 +246,7 @@ in
     satty
     slurp
     swaynotificationcenter
+    tailscale
     wl-clipboard
     zapretWrapped
   ];
@@ -271,7 +272,7 @@ in
     "L+ %h/.local/bin/screenshot - - - - ${hostSpec.dotfilesDir}/bin/screenshot"
     "L+ %h/.local/bin/ts-rustdesk-forward - - - - ${hostSpec.dotfilesDir}/bin/ts-rustdesk-forward"
     "L+ %h/.local/bin/antigravity - - - - %h/opt/antigravity/antigravity"
-    "L+ %h/.local/bin/antigravity-update - - - - %h/dev/workstation/update_antigravity.py"
+    "L+ %h/.local/bin/antigravity-update - - - - %h/dev/workstation/auto_update.py"
     "L+ %h/.local/share/applications/antigravity.desktop - - - - ${hostSpec.dotfilesDir}/applications/antigravity.desktop"
   ];
 

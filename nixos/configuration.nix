@@ -21,7 +21,8 @@ let
       sed -i "1s|^#!.*|#!${pythonGio}/bin/python3|" $out/bin/.$prog-unwrapped
       makeWrapper $out/bin/.$prog-unwrapped $out/bin/$prog \
         --prefix GI_TYPELIB_PATH : "${pkgs.glib.out}/lib/girepository-1.0:${pkgs.gobject-introspection}/lib/girepository-1.0" \
-        --prefix PATH : "/run/wrappers/bin:/run/current-system/sw/bin:${pkgs.lib.makeBinPath [ pkgs.coreutils pkgs.openvpn pkgs.systemd pkgs.xdg-utils pkgs.glib ]}"
+        --prefix PATH : "/run/wrappers/bin:/etc/profiles/per-user/phamnv/bin:/run/current-system/sw/bin:${pkgs.lib.makeBinPath [ pkgs.coreutils pkgs.openvpn pkgs.systemd pkgs.xdg-utils pkgs.glib ]}" \
+        --prefix XDG_DATA_DIRS : "/etc/profiles/per-user/phamnv/share:/run/current-system/sw/share"
     done
 
     cat > $out/lib/NetworkManager/VPN/nm-openvpn-sso-service.name <<'EOF'

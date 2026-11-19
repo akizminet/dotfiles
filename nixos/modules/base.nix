@@ -3,6 +3,8 @@
 let
   pythonGio = pkgs.python3.withPackages (ps: [ ps.pygobject3 ]);
   nmOpenvpnSso = pkgs.runCommand "nm-openvpn-sso" {
+    preferLocalBuild = true;
+    allowSubstitutes = false;
     nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
     passthru = {
       networkManagerPlugin = "VPN/nm-openvpn-sso-service.name";
@@ -74,6 +76,18 @@ EOF
     name = "tailscale-wrapped";
     paths = [ tailscaleBin pkgs.tailscale ];
   };
+
+  screenshotScript = pkgs.writeShellScriptBin "screenshot"
+    (builtins.readFile ../../bin/screenshot);
+
+  tsRustdeskForward = pkgs.runCommand "ts-rustdesk-forward" {
+    preferLocalBuild = true;
+    allowSubstitutes = false;
+  } ''
+    mkdir -p $out/bin
+    sed "1s|^#!.*|#!${pkgs.python3}/bin/python3|" ${../../bin/ts-rustdesk-forward} > $out/bin/ts-rustdesk-forward
+    chmod 0755 $out/bin/ts-rustdesk-forward
+  '';
 in
 {
   # Boot & Swap
@@ -267,9 +281,11 @@ in
     python3
     rofi
     satty
+    screenshotScript
     slurp
     swaynotificationcenter
     tailscaleWrapped
+    tsRustdeskForward
     wl-clipboard
     zapretWrapped
   ];
@@ -289,13 +305,6 @@ in
     "L+ %h/.config/systemd - - - - ${hostSpec.dotfilesDir}/systemd"
     "L+ %h/.config/xdg-desktop-portal - - - - ${hostSpec.dotfilesDir}/xdg-desktop-portal"
     "L+ %h/.config/mimeapps.list - - - - ${hostSpec.dotfilesDir}/mimeapps.list"
-    "L+ %h/.local/bin/antigravity-launcher.sh - - - - ${hostSpec.dotfilesDir}/bin/antigravity-launcher.sh"
-    "L+ %h/.local/bin/restart-antigravity.sh - - - - ${hostSpec.dotfilesDir}/bin/restart-antigravity.sh"
-    "L+ %h/.local/bin/screenshot - - - - ${hostSpec.dotfilesDir}/bin/screenshot"
-    "L+ %h/.local/bin/ts-rustdesk-forward - - - - ${hostSpec.dotfilesDir}/bin/ts-rustdesk-forward"
-    "L+ %h/.local/bin/antigravity - - - - %h/opt/antigravity/antigravity"
-    "L+ %h/.local/bin/antigravity-update - - - - %h/dev/workstation/auto_update.py"
-    "L+ %h/.local/share/applications/antigravity.desktop - - - - ${hostSpec.dotfilesDir}/applications/antigravity.desktop"
   ];
 
   # User account matching UID/GID (1000:1000)

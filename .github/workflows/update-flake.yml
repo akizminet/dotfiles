@@ -1,0 +1,103 @@
+name: Update Flake Lock (Cache-Gated)
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-flake
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Update public flake inputs
+        id: update-lock
+        env:
+          GIT_SSH_COMMAND: /bin/false
+          NIX_CONFIG: "access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          read_revs() {
+            python3 -c '
+          import json
+          with open("flake.lock", "r", encoding="utf-8") as fh:
+              nodes = json.load(fh).get("nodes", {})
+          for name in ("nixpkgs", "akquick"):
+              rev = nodes.get(name, {}).get("locked", {}).get("rev", "unknown")[:12]
+              print(f"{name}={rev}")
+          '
+          }
+
+          OLD_REVS="$(read_revs)"
+          nix flake update nixpkgs akquick
+          NEW_REVS="$(read_revs)"
+
+          if git diff --quiet flake.lock; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No flake.lock changes."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            SUMMARY="$(python3 -c '
+          import sys
+          old = dict(line.split("=", 1) for line in sys.argv[1].splitlines())
+          new = dict(line.split("=", 1) for line in sys.argv[2].splitlines())
+          lines = [
+              f"- {k}: {old.get(k, \"?\")} -> {new.get(k, \"?\")}"
+              for k in ("nixpkgs", "akquick")
+              if old.get(k) != new.get(k)
+          ]
+          print("\n".join(lines) or "- flake.lock updated")
+          ' "$OLD_REVS" "$NEW_REVS")"
+            {
+              echo "summary<<__FLAKE_SUMMARY_EOF__"
+              echo "$SUMMARY"
+              echo "__FLAKE_SUMMARY_EOF__"
+            } >> "$GITHUB_OUTPUT"
+            echo "Updated flake.lock:"
+            echo "$SUMMARY"
+          fi
+
+      - name: Check cache.nixos.org readiness
+        id: check-cache
+        if: steps.update-lock.outputs.changed == 'true'
+        env:
+          NIX_CONFIG: "access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          set +e
+          python3 scripts/check-nixos-cache.py
+          rc=$?
+          set -e
+
+          if [ "$rc" -eq 0 ]; then
+            echo "All upstream nixpkgs derivations are cached."
+          elif [ "$rc" -eq 2 ]; then
+            echo "Upstream cache still building; skipping commit until next scheduled run."
+            exit 0
+          else
+            exit "$rc"
+          fi
+
+      - name: Commit and push updated flake.lock
+        if: steps.update-lock.outputs.changed == 'true' && steps.check-cache.outputs.ready == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add flake.lock
+          git commit \
+            -m "chore(flake.lock): update locked revisions" \
+            -m "${{ steps.update-lock.outputs.summary }}"
+          git push origin HEAD:main

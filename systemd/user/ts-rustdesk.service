@@ -4,7 +4,7 @@ After=tailscaled.service
 Wants=tailscaled.service
 
 [Service]
-ExecStart=%h/.local/bin/ts-rustdesk-forward 21117 100.125.232.113 21118
+ExecStart=/run/current-system/sw/bin/ts-rustdesk-forward 21117 100.125.232.113 21118
 Restart=always
 RestartSec=3
 

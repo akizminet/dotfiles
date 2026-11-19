@@ -40,6 +40,22 @@ let
     '';
   };
 
+  rustdeskWrapped = pkgs.symlinkJoin {
+    name = "rustdesk-wrapped";
+    paths = [ pkgs.rustdesk ];
+    buildInputs = [ pkgs.makeBinaryWrapper ];
+    postBuild = ''
+      rm -f $out/bin/rustdesk
+      makeWrapper "${pkgs.rustdesk}/bin/rustdesk" "$out/bin/rustdesk" \
+        --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${pkgs.pipewire}/lib/gstreamer-1.0"
+
+      rm -f $out/share/applications/rustdesk.desktop
+      mkdir -p $out/share/applications
+      sed "s|Exec=rustdesk|Exec=$out/bin/rustdesk|g" \
+        ${pkgs.rustdesk}/share/applications/rustdesk.desktop > $out/share/applications/rustdesk.desktop
+    '';
+  };
+
   celluloidCustom = pkgs.celluloid.overrideAttrs (old: {
     src = celluloid-src;
     buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.ffmpeg ];
@@ -53,7 +69,7 @@ in
     firefoxWrapped
     celluloidCustom
     libreoffice
-    rustdesk
+    rustdeskWrapped
     nautilus
     file-roller
     telegram-desktop

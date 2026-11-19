@@ -15,6 +15,7 @@ from pathlib import Path
 LOCAL_PREFIXES = (
     "initrd-linux-",
     "google-chrome-",
+    "firefox-bin-",
     "celluloid-",
     "akquick-",
     "nm-openvpn-sso",

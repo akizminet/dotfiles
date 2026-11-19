@@ -25,18 +25,18 @@ let
 
   firefoxWrapped = pkgs.symlinkJoin {
     name = "firefox-wrapped";
-    paths = [ pkgs.firefox ];
+    paths = [ pkgs.firefox-bin ];
     buildInputs = [ pkgs.makeBinaryWrapper ];
     postBuild = ''
       rm -f $out/bin/firefox
-      makeWrapper "${pkgs.firefox}/bin/firefox" "$out/bin/firefox" \
+      makeWrapper "${pkgs.firefox-bin}/bin/firefox" "$out/bin/firefox" \
         --set-default MOZ_ENABLE_WAYLAND 1 \
         --set-default RES_OPTIONS "ndots:0"
 
       rm -f $out/share/applications/firefox.desktop
       mkdir -p $out/share/applications
       sed "s|Exec=firefox|Exec=$out/bin/firefox|g" \
-        ${pkgs.firefox}/share/applications/firefox.desktop > $out/share/applications/firefox.desktop
+        ${pkgs.firefox-bin}/share/applications/firefox.desktop > $out/share/applications/firefox.desktop
     '';
   };
 

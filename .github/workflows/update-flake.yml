@@ -53,13 +53,14 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
             SUMMARY="$(python3 -c '
           import sys
-          old = dict(line.split("=", 1) for line in sys.argv[1].splitlines())
-          new = dict(line.split("=", 1) for line in sys.argv[2].splitlines())
-          lines = [
-              f"- {k}: {old.get(k, \"?\")} -> {new.get(k, \"?\")}"
-              for k in ("nixpkgs", "akquick")
-              if old.get(k) != new.get(k)
-          ]
+          old = dict(line.split("=", 1) for line in sys.argv[1].splitlines() if "=" in line)
+          new = dict(line.split("=", 1) for line in sys.argv[2].splitlines() if "=" in line)
+          lines = []
+          for k in ("nixpkgs", "akquick"):
+              old_rev = old.get(k, "?")
+              new_rev = new.get(k, "?")
+              if old_rev != new_rev:
+                  lines.append(f"- {k}: {old_rev} -> {new_rev}")
           print("\n".join(lines) or "- flake.lock updated")
           ' "$OLD_REVS" "$NEW_REVS")"
             {

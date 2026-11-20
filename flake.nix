@@ -78,6 +78,8 @@
           modules = [
             { nixpkgs.overlays = [ (final: prev: { pcre = prev.pcre2; }) ]; }
             ./nixos/modules/base.nix
+            ./nixos/modules/desktop-configs.nix
+            ./nixos/modules/user-services.nix
             ./nixos/modules/user-packages.nix
             ./nixos/modules/external-apps.nix
           ] ++ lib.optional (hardwareConfigPath != null) hardwareConfigPath;

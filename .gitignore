@@ -1,6 +1,3 @@
-# Fcitx5 runtime layout cache
-fcitx5/conf/cached_layouts
-
 # Backup and temporary files
 *.bak
 *.disabled
@@ -15,13 +12,6 @@ fcitx5/conf/cached_layouts
 Thumbs.db
 .direnv/
 .devenv/
-
-# Dynamic wallpaper symlink
-sway/wallpapers/current-wallpaper.jpg
-
-# Machine-specific / local user services
-systemd/user/mewsic-bot*
-systemd/user/*/mewsic-bot*
 
 # Python bytecode & Nix build symlinks
 __pycache__/

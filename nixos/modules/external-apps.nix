@@ -41,7 +41,7 @@ let
   '';
 
   antigravityRestart = pkgs.writeShellScriptBin "restart-antigravity"
-    (builtins.readFile ../../bin/restart-antigravity.sh);
+    (builtins.readFile ../scripts/restart-antigravity.sh);
 
   antigravityUpdate = pkgs.writeShellScriptBin "antigravity-update" ''
     exec ${pkgs.python3}/bin/python3 ${../../scripts/update-antigravity.py} "$@"

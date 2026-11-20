@@ -51,18 +51,6 @@ EOF
       $out/share/dbus-1/system.d/org.freedesktop.NetworkManager.openvpn-sso.conf
   '';
 
-  zapretWrapped = pkgs.symlinkJoin {
-    name = "zapret-wrapped";
-    paths = [ pkgs.zapret ];
-    buildInputs = [ pkgs.makeBinaryWrapper ];
-    postBuild = ''
-      rm -f $out/bin/zapret
-      makeWrapper "${pkgs.zapret}/bin/zapret" "$out/bin/zapret" \
-        --set-default ZAPRET_RW "/etc/zapret" \
-        --set-default ZAPRET_CONFIG "/etc/zapret/config"
-    '';
-  };
-
   tailscaleBin = pkgs.writeShellScriptBin "tailscale" ''
     SOCKET="''${XDG_RUNTIME_DIR:-/run/user/$UID}/tailscale/tailscaled.sock"
     if [[ "$*" != *--socket* ]] && [ -S "$SOCKET" ]; then
@@ -76,18 +64,6 @@ EOF
     name = "tailscale-wrapped";
     paths = [ tailscaleBin pkgs.tailscale ];
   };
-
-  screenshotScript = pkgs.writeShellScriptBin "screenshot"
-    (builtins.readFile ../../bin/screenshot);
-
-  tsRustdeskForward = pkgs.runCommand "ts-rustdesk-forward" {
-    preferLocalBuild = true;
-    allowSubstitutes = false;
-  } ''
-    mkdir -p $out/bin
-    sed "1s|^#!.*|#!${pkgs.python3}/bin/python3|" ${../../bin/ts-rustdesk-forward} > $out/bin/ts-rustdesk-forward
-    chmod 0755 $out/bin/ts-rustdesk-forward
-  '';
 in
 {
   # Boot & Swap
@@ -281,30 +257,11 @@ in
     python3
     rofi
     satty
-    screenshotScript
     slurp
     swaynotificationcenter
     tailscaleWrapped
-    tsRustdeskForward
     wl-clipboard
-    zapretWrapped
-  ];
-
-  # Declarative dotfile symlinks
-  systemd.user.tmpfiles.rules = [
-    "L+ %h/.config/hypr - - - - ${hostSpec.dotfilesDir}/hypr"
-    "L+ %h/.config/sway - - - - ${hostSpec.dotfilesDir}/sway"
-    "L+ %h/.config/ironbar - - - - ${hostSpec.dotfilesDir}/ironbar"
-    "L+ %h/.config/rofi - - - - ${hostSpec.dotfilesDir}/rofi"
-    "L+ %h/.config/foot - - - - ${hostSpec.dotfilesDir}/foot"
-    "L+ %h/.config/gtk-3.0 - - - - ${hostSpec.dotfilesDir}/gtk-3.0"
-    "L+ %h/.config/fcitx5 - - - - ${hostSpec.dotfilesDir}/fcitx5"
-    "L+ %h/.config/satty - - - - ${hostSpec.dotfilesDir}/satty"
-    "L+ %h/.config/swaync - - - - ${hostSpec.dotfilesDir}/swaync"
-    "L+ %h/.config/autostart - - - - ${hostSpec.dotfilesDir}/autostart"
-    "L+ %h/.config/systemd - - - - ${hostSpec.dotfilesDir}/systemd"
-    "L+ %h/.config/xdg-desktop-portal - - - - ${hostSpec.dotfilesDir}/xdg-desktop-portal"
-    "L+ %h/.config/mimeapps.list - - - - ${hostSpec.dotfilesDir}/mimeapps.list"
+    zapret
   ];
 
   # User account matching UID/GID (1000:1000)

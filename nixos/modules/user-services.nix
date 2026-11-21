@@ -10,6 +10,30 @@
     after = [ "graphical-session-pre.target" ];
   };
 
+  systemd.user.services.hyprsunset = {
+    description = "Hyprland Color Temperature & Gamma Daemon";
+    partOf = [ "hyprland-session.target" ];
+    after = [ "graphical-session.target" ];
+    wantedBy = [ "hyprland-session.target" ];
+    unitConfig.ConditionEnvironment = "HYPRLAND_INSTANCE_SIGNATURE";
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.hyprsunset}/bin/hyprsunset --identity";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+  };
+
+  systemd.user.services.hypridle = {
+    wants = [ "hyprsunset.service" ];
+    after = [ "hyprsunset.service" ];
+    unitConfig.ConditionEnvironment = "HYPRLAND_INSTANCE_SIGNATURE";
+    path = with pkgs; [
+      bash
+      brightnessctl
+    ];
+  };
+
   systemd.user.services.nm-openvpn-sso-user-agent = {
     description = "NetworkManager OpenVPN SSO User Agent";
     partOf = [ "graphical-session.target" ];
@@ -46,7 +70,6 @@
       gawk
       gnugrep
       hyprland
-      sway
     ];
     serviceConfig = {
       Type = "oneshot";

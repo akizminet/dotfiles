@@ -206,7 +206,6 @@ in
   # Core Wayland Session, Lock Screen (PAM) & Input Method
   programs.hyprland.enable = true;
   programs.hyprlock.enable = true;
-  programs.sway.enable = true;
   environment.localBinInPath = true;
   environment.sessionVariables = {
     NIXOS_OZONE_WL = "1";
@@ -244,12 +243,14 @@ in
   environment.systemPackages = with pkgs; [
     adwaita-icon-theme
     akquick.packages.${pkgs.stdenv.hostPlatform.system}.default
+    brightnessctl
     foot
     git
     grim
     hypridle
     hyprland-guiutils
     hyprpaper
+    hyprsunset
     ironbar
     libnotify
     openvpn

@@ -32,14 +32,13 @@ local menu     = "rofi -show drun"
 ---- AUTOSTART ----
 -------------------
 hl.on("hyprland.start", function ()
-    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP HYPRLAND_INSTANCE_SIGNATURE")
     hl.exec_cmd("systemctl --user start hyprland-session.target")
     hl.exec_cmd("systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal")
     hl.exec_cmd("ironbar")
     hl.exec_cmd("swaync")
     hl.exec_cmd("akquick --daemon")
     hl.exec_cmd("fcitx5 -d")
-    hl.exec_cmd("hypridle")
     hl.exec_cmd("hyprpaper")
     hl.exec_cmd("wallpaper-switcher --force")
     hl.exec_cmd("systemctl --user start sway-wallpaper-switcher.timer")

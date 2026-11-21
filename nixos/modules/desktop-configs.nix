@@ -13,6 +13,13 @@ let
     inherit wallpapersDir;
   };
 
+  hyprDim = pkgs.writeShellScriptBin "hypr-dim"
+    (builtins.readFile ../scripts/hypr-dim.sh);
+
+  hypridleConf = pkgs.replaceVars ../configs/hypr/hypridle.conf {
+    hyprDim = "${hyprDim}/bin/hypr-dim";
+  };
+
   mkSubstBin = name: src: replacements:
     pkgs.replaceVarsWith {
       inherit name src replacements;
@@ -58,6 +65,7 @@ in
     wallpaperSwitcher
     swayLock
     swayIdle
+    hyprDim
     powermenu
     screenshotScript
     tsRustdeskForward
@@ -129,6 +137,12 @@ in
     };
   };
 
+  # Ensure hypridle.service refreshes user tmpfiles and restarts whenever hypridle.conf changes
+  systemd.user.services.hypridle = {
+    restartTriggers = [ hypridleConf ];
+    serviceConfig.ExecStartPre = "${config.systemd.package}/bin/systemd-tmpfiles --user --create --remove";
+  };
+
   # Store-backed declarative dotfile symlinks (read-only static dirs, writable dirs for mutable state)
   systemd.user.tmpfiles.rules = [
     "L+ %h/.config/sway - - - - ${../configs/sway}"
@@ -141,7 +155,7 @@ in
     # Keep ~/.config/hypr writable so machine-local xdph.conf can coexist with store-managed files
     "d %h/.config/hypr 0755 - - -"
     "L+ %h/.config/hypr/hyprland.lua - - - - ${../configs/hypr/hyprland.lua}"
-    "L+ %h/.config/hypr/hypridle.conf - - - - ${../configs/hypr/hypridle.conf}"
+    "L+ %h/.config/hypr/hypridle.conf - - - - ${hypridleConf}"
     "L+ %h/.config/hypr/hyprlock.conf - - - - ${hyprlockConf}"
     "L+ %h/.config/hypr/hyprpaper.conf - - - - ${hyprpaperConf}"
     "L+ %h/.config/hypr/hypr_shortcuts.md - - - - ${../configs/hypr/hypr_shortcuts.md}"

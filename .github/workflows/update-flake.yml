@@ -1,6 +1,9 @@
 name: Update Flake Lock (Cache-Gated)
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # 03:23, 09:23, 15:23, 21:23 UTC (10:23, 16:23, 22:23, 04:23 ICT), off :00 to avoid cron contention
     - cron: "23 3,9,15,21 * * *"
@@ -15,6 +18,7 @@ concurrency:
 
 jobs:
   update:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository

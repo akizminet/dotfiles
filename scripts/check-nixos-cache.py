@@ -12,10 +12,13 @@ import sys
 import tempfile
 from pathlib import Path
 
+LOCAL_NAMES = frozenset({"pam.d"})
 LOCAL_PREFIXES = (
     "initrd-linux-",
     "google-chrome-",
     "firefox-bin-",
+    "libsciter-",
+    "rustdesk-",
     "celluloid-",
     "akquick-",
     "nm-openvpn-sso",
@@ -165,6 +168,7 @@ def classify_drvs(
             trivial
             or key in akquick_keys
             or key in vendor_only
+            or name in LOCAL_NAMES
             or name.startswith(LOCAL_PREFIXES)
             or name.endswith(LOCAL_SUFFIXES)
         ):
@@ -176,7 +180,7 @@ def classify_drvs(
 
 
 def write_github_outputs(
-    total_drvs: int, local_count: int, blockers: list[str]
+    total_drvs: int, local_filtered: list[str], blockers: list[str]
 ) -> None:
     ready = len(blockers) == 0
     github_output = os.environ.get("GITHUB_OUTPUT")
@@ -196,11 +200,15 @@ def write_github_outputs(
             )
             fh.write(f"### NixOS Cache Check: {status}\n\n")
             fh.write(f"- Total unbuilt derivations: `{total_drvs}`\n")
-            fh.write(f"- Local/trivial derivations filtered: `{local_count}`\n")
+            fh.write(f"- Local/trivial derivations filtered: `{len(local_filtered)}`\n")
             fh.write(f"- Upstream cache blockers: `{len(blockers)}`\n")
             if blockers:
-                fh.write("\n<details>\n<summary>Upstream blockers</summary>\n\n")
+                fh.write("\n#### Upstream blockers\n\n")
                 for name in blockers:
+                    fh.write(f"- `{name}`\n")
+            if local_filtered:
+                fh.write("\n<details>\n<summary>Filtered local/trivial derivations</summary>\n\n")
+                for name in local_filtered:
                     fh.write(f"- `{name}`\n")
                 fh.write("\n</details>\n")
 
@@ -261,13 +269,30 @@ def main() -> int:
             print(str(exc), file=sys.stderr)
             return 1
 
+        in_gha = os.environ.get("GITHUB_ACTIONS") == "true"
         print(f"total_drvs={len(drvs)}")
         print(f"filtered_local={len(local_filtered)}")
+        if local_filtered:
+            if in_gha:
+                print(
+                    f"::group::Filtered local/trivial derivations ({len(local_filtered)})"
+                )
+            for name in local_filtered:
+                print(f"  LOCAL: {name}")
+            if in_gha:
+                print("::endgroup::")
+
         print(f"upstream_blockers={len(blockers)}")
         for name in blockers:
             print(f"  BLOCKER: {name}")
+        if blockers and in_gha:
+            blocker_list = ", ".join(dict.fromkeys(blockers))
+            print(
+                f"::warning title=Upstream cache still building::"
+                f"{len(blockers)} upstream blocker(s) not yet on cache.nixos.org: {blocker_list}"
+            )
 
-        write_github_outputs(len(drvs), len(local_filtered), blockers)
+        write_github_outputs(len(drvs), local_filtered, blockers)
         return 0 if not blockers else 2
 
 

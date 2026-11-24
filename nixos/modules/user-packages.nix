@@ -75,6 +75,7 @@ in
     libreoffice
     rustdeskWrapped
     nautilus
+    ffmpegthumbnailer
     file-roller
     telegram-desktop
     qbittorrent

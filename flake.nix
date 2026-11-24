@@ -36,7 +36,10 @@
         if envDir != "" then envDir else "/home/${username}/dev/dotfiles";
 
       machineId =
-        if builtins.pathExists /etc/machine-id then
+        let envMachineId = builtins.getEnv "NIXOS_MACHINE_ID"; in
+        if envMachineId == "none" then null
+        else if envMachineId != "" then envMachineId
+        else if builtins.pathExists /etc/machine-id then
           lib.strings.trim (builtins.readFile /etc/machine-id)
         else
           null;
@@ -76,7 +79,6 @@
             inherit self celluloid-src akquick hostSpec;
           };
           modules = [
-            { nixpkgs.overlays = [ (final: prev: { pcre = prev.pcre2; }) ]; }
             ./nixos/modules/base.nix
             ./nixos/modules/desktop-configs.nix
             ./nixos/modules/user-services.nix

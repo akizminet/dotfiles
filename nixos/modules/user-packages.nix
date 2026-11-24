@@ -4,7 +4,7 @@ let
   googleChromeWrapped = pkgs.symlinkJoin {
     name = "google-chrome-wrapped";
     paths = [ pkgs.google-chrome ];
-    buildInputs = [ pkgs.makeBinaryWrapper ];
+    nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
     postBuild = ''
       rm -f $out/bin/google-chrome $out/bin/google-chrome-stable
       makeWrapper "${pkgs.google-chrome}/bin/google-chrome-stable" "$out/bin/google-chrome-stable" \
@@ -26,7 +26,7 @@ let
   firefoxWrapped = pkgs.symlinkJoin {
     name = "firefox-wrapped";
     paths = [ pkgs.firefox-bin ];
-    buildInputs = [ pkgs.makeBinaryWrapper ];
+    nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
     postBuild = ''
       rm -f $out/bin/firefox
       makeWrapper "${pkgs.firefox-bin}/bin/firefox" "$out/bin/firefox" \
@@ -42,17 +42,21 @@ let
 
   rustdeskWrapped = pkgs.symlinkJoin {
     name = "rustdesk-wrapped";
-    paths = [ pkgs.rustdesk ];
-    buildInputs = [ pkgs.makeBinaryWrapper ];
+    paths = [ pkgs.rustdesk-flutter ];
+    nativeBuildInputs = [ pkgs.makeBinaryWrapper ];
     postBuild = ''
       rm -f $out/bin/rustdesk
-      makeWrapper "${pkgs.rustdesk}/bin/rustdesk" "$out/bin/rustdesk" \
+      makeWrapper "${pkgs.rustdesk-flutter}/bin/rustdesk" "$out/bin/rustdesk" \
         --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "${pkgs.pipewire}/lib/gstreamer-1.0"
 
-      rm -f $out/share/applications/rustdesk.desktop
       mkdir -p $out/share/applications
-      sed "s|Exec=rustdesk|Exec=$out/bin/rustdesk|g" \
-        ${pkgs.rustdesk}/share/applications/rustdesk.desktop > $out/share/applications/rustdesk.desktop
+      for desktop in rustdesk.desktop rustdesk-link.desktop; do
+        if [ -e "${pkgs.rustdesk-flutter}/share/applications/$desktop" ]; then
+          rm -f "$out/share/applications/$desktop"
+          sed "s|Exec=rustdesk|Exec=$out/bin/rustdesk|g" \
+            "${pkgs.rustdesk-flutter}/share/applications/$desktop" > "$out/share/applications/$desktop"
+        fi
+      done
     '';
   };
 

@@ -4,21 +4,25 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   schedule:
     # 03:23, 09:23, 15:23, 21:23 UTC (10:23, 16:23, 22:23, 04:23 ICT), off :00 to avoid cron contention
     - cron: "23 3,9,15,21 * * *"
   workflow_dispatch: {}
 
 permissions:
-  contents: write
-
-concurrency:
-  group: update-flake
-  cancel-in-progress: false
+  contents: read
 
 jobs:
-  update:
-    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
+  verify-pr:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    concurrency:
+      group: verify-config-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -29,6 +33,37 @@ jobs:
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
+      - name: Verify PR config cache readiness
+        env:
+          NIX_CONFIG: "access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          python3 scripts/check-nixos-cache.py
+
+  update:
+    if: github.event_name != 'pull_request' && (github.event_name != 'push' || github.actor != 'github-actions[bot]')
+    permissions:
+      contents: write
+    concurrency:
+      group: update-flake
+      cancel-in-progress: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Verify committed config cache readiness
+        if: github.event_name == 'push'
+        env:
+          NIX_CONFIG: "access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}"
+        run: |
+          python3 scripts/check-nixos-cache.py
 
       - name: Update public flake inputs
         id: update-lock

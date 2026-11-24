@@ -24,8 +24,8 @@ Cấu hình NixOS thuần sử dụng Flake cho workstation chạy Hyprland / Sw
 # Áp dụng thay đổi cấu hình OS lẫn User Apps (wrapper nh tự truyền --impure và đọc flake mặc định)
 nh os switch
 
-# Cập nhật toàn bộ nixpkgs/inputs trong flake.lock rồi áp dụng đồng bộ
-nix flake update && nh os switch
+# Cập nhật flake.lock đã qua cache-gate từ CI rồi áp dụng (hoặc kiểm tra với `python3 scripts/check-nixos-cache.py` trước khi switch nếu update tay)
+git pull --ff-only && nh os switch
 
 # Kiểm tra những file nào bị thay đổi runtime trong /etc so với cấu hình gốc
 ls -la /.rw-etc/upper

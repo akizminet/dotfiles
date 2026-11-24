@@ -4,12 +4,17 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
+import errno
+import http.client
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import tempfile
+import threading
 from pathlib import Path
 
 LOCAL_NAMES = frozenset({"pam.d"})
@@ -17,13 +22,15 @@ LOCAL_PREFIXES = (
     "initrd-linux-",
     "google-chrome-",
     "firefox-bin-",
-    "libsciter-",
-    "rustdesk-",
     "celluloid-",
     "akquick-",
     "nm-openvpn-sso",
 )
 LOCAL_SUFFIXES = ("-modules-shrunk",)
+
+CACHE_HOST = "cache.nixos.org"
+CACHE_WORKERS = 16
+CACHE_RETRIES = 3
 
 WILL_BUILD_RE = re.compile(
     r"^(?:these \d+ derivations|this derivation) will be built:$"
@@ -120,13 +127,183 @@ def input_drv_keys(info: dict) -> list[str]:
     return []
 
 
+def output_hashes(info: dict) -> list[str]:
+    hashes: list[str] = []
+    for out_info in info.get("outputs", {}).values():
+        path = out_info.get("path", "")
+        if path:
+            hashes.append(strip_store_prefix(path).split("-", 1)[0])
+    return hashes
+
+
+class _IPv4HTTPSConnection(http.client.HTTPSConnection):
+    """HTTPSConnection forced to IPv4 when IPv6 routes are unreachable."""
+
+    def connect(self) -> None:
+        last_err: OSError | None = None
+        for res in socket.getaddrinfo(
+            self.host, self.port, socket.AF_INET, socket.SOCK_STREAM
+        ):
+            af, socktype, proto, _, sa = res
+            sock: socket.socket | None = None
+            try:
+                sock = socket.socket(af, socktype, proto)
+                if self.timeout is not socket._GLOBAL_DEFAULT_TIMEOUT:  # type: ignore[attr-defined]
+                    sock.settimeout(self.timeout)
+                if self.source_address:
+                    sock.bind(self.source_address)
+                sock.connect(sa)
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+                return
+            except OSError as exc:
+                last_err = exc
+                if sock is not None:
+                    sock.close()
+        if last_err is not None:
+            raise last_err
+        raise OSError(f"No IPv4 address resolved for {self.host}:{self.port}")
+
+
+class CacheChecker:
+    """Thread-safe keep-alive HEAD checker for cache.nixos.org."""
+
+    def __init__(self, host: str = CACHE_HOST, timeout: float = 15.0) -> None:
+        self.host = host
+        self.timeout = timeout
+        self._local = threading.local()
+        self._lock = threading.Lock()
+        self._force_ipv4 = False
+        self._conns: list[http.client.HTTPSConnection] = []
+
+    def _new_conn(self) -> http.client.HTTPSConnection:
+        cls = _IPv4HTTPSConnection if self._force_ipv4 else http.client.HTTPSConnection
+        conn = cls(self.host, timeout=self.timeout)
+        with self._lock:
+            self._conns.append(conn)
+        self._local.conn = conn
+        return conn
+
+    def _get_conn(self) -> http.client.HTTPSConnection:
+        conn = getattr(self._local, "conn", None)
+        if conn is None:
+            return self._new_conn()
+        return conn
+
+    def _reset_conn(self) -> None:
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            self._local.conn = None
+
+    def check_hash(self, store_hash: str) -> bool:
+        path = f"/{store_hash}.narinfo"
+        last_exc: Exception | None = None
+        for attempt in range(CACHE_RETRIES):
+            conn = self._get_conn()
+            try:
+                conn.request("HEAD", path, headers={"Host": self.host})
+                resp = conn.getresponse()
+                resp.read()
+                if resp.status == 200:
+                    return True
+                if resp.status == 404:
+                    return False
+                raise RuntimeError(
+                    f"Unexpected HTTP {resp.status} from https://{self.host}{path}"
+                )
+            except OSError as exc:
+                last_exc = exc
+                if exc.errno == errno.ENETUNREACH:
+                    with self._lock:
+                        self._force_ipv4 = True
+                self._reset_conn()
+            except http.client.HTTPException as exc:
+                last_exc = exc
+                self._reset_conn()
+            if attempt + 1 < CACHE_RETRIES:
+                continue
+        raise RuntimeError(
+            f"Failed checking https://{self.host}{path} after {CACHE_RETRIES} attempts: {last_exc}"
+        )
+
+    def close(self) -> None:
+        with self._lock:
+            for conn in self._conns:
+                try:
+                    conn.close()
+                except Exception:
+                    pass
+            self._conns.clear()
+
+
+def collect_uncached_drvs_remote(root_drv: str) -> tuple[list[str], dict[str, dict]]:
+    """Walk the derivation DAG and return derivations not cached on cache.nixos.org."""
+    root_key = strip_store_prefix(root_drv)
+    frontier: set[str] = {root_key}
+    seen: set[str] = {root_key}
+    loaded: dict[str, dict] = {}
+    cache_status: dict[str, bool] = {}
+    uncached: list[str] = []
+
+    checker = CacheChecker()
+    try:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=CACHE_WORKERS) as pool:
+            while frontier:
+                batch_paths = [f"/nix/store/{k}" for k in sorted(frontier)]
+                frontier.clear()
+                info_map = load_derivations(batch_paths)
+                loaded.update(info_map)
+
+                hashes_to_check = sorted(
+                    {
+                        h
+                        for info in info_map.values()
+                        for h in output_hashes(info)
+                        if h not in cache_status
+                    }
+                )
+                if hashes_to_check:
+                    for h, is_cached in zip(
+                        hashes_to_check, pool.map(checker.check_hash, hashes_to_check)
+                    ):
+                        cache_status[h] = is_cached
+
+                for key, info in info_map.items():
+                    hashes = output_hashes(info)
+                    if hashes and all(cache_status.get(h, False) for h in hashes):
+                        continue
+                    uncached.append(f"/nix/store/{key}")
+                    for dep_key in input_drv_keys(info):
+                        if dep_key not in seen:
+                            seen.add(dep_key)
+                            frontier.add(dep_key)
+    finally:
+        checker.close()
+
+    return uncached, loaded
+
+
 def classify_drvs(
     drv_paths: list[str],
-) -> tuple[list[str], list[str]]:
+    preloaded: dict[str, dict] | None = None,
+) -> tuple[list[str], list[tuple[str, str]]]:
     if not drv_paths:
         return [], []
 
-    data = load_derivations(drv_paths)
+    if preloaded is not None:
+        needed_keys = [strip_store_prefix(p) for p in drv_paths]
+        missing_paths = [
+            f"/nix/store/{k}" for k in needed_keys if k not in preloaded
+        ]
+        data = {k: preloaded[k] for k in needed_keys if k in preloaded}
+        if missing_paths:
+            data.update(load_derivations(missing_paths))
+    else:
+        data = load_derivations(drv_paths)
+
     parsed: dict[str, tuple[str, bool]] = {}
     rev_deps: dict[str, set[str]] = {}
 
@@ -162,7 +339,7 @@ def classify_drvs(
                 changed = True
 
     local_filtered: list[str] = []
-    blockers: list[str] = []
+    blockers: list[tuple[str, str]] = []
     for key, (name, trivial) in parsed.items():
         if (
             trivial
@@ -174,13 +351,13 @@ def classify_drvs(
         ):
             local_filtered.append(name)
         else:
-            blockers.append(name)
+            blockers.append((name, key))
 
     return sorted(local_filtered), sorted(blockers)
 
 
 def write_github_outputs(
-    total_drvs: int, local_filtered: list[str], blockers: list[str]
+    total_drvs: int, local_filtered: list[str], blockers: list[tuple[str, str]]
 ) -> None:
     ready = len(blockers) == 0
     github_output = os.environ.get("GITHUB_OUTPUT")
@@ -204,8 +381,8 @@ def write_github_outputs(
             fh.write(f"- Upstream cache blockers: `{len(blockers)}`\n")
             if blockers:
                 fh.write("\n#### Upstream blockers\n\n")
-                for name in blockers:
-                    fh.write(f"- `{name}`\n")
+                for name, key in blockers:
+                    fh.write(f"- `{name}` (`/nix/store/{key}`)\n")
             if local_filtered:
                 fh.write("\n<details>\n<summary>Filtered local/trivial derivations</summary>\n\n")
                 for name in local_filtered:
@@ -221,15 +398,47 @@ def main() -> int:
         default="nixosConfigurations.default.config.system.build.toplevel",
         help="Flake output attribute to dry-run",
     )
+    parser.add_argument(
+        "--override-input",
+        action="append",
+        nargs=2,
+        default=[],
+        metavar=("NAME", "URI"),
+        help="Override a flake input (repeatable)",
+    )
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--ignore-local-store",
+        action="store_true",
+        help="Check cache.nixos.org directly via derivation DAG instead of local /nix/store",
+    )
+    mode_group.add_argument(
+        "--use-local-store",
+        action="store_true",
+        help="Use nix build --dry-run against the local /nix/store",
+    )
     args = parser.parse_args()
+
+    in_gha = os.environ.get("GITHUB_ACTIONS") == "true"
+    use_local_store = (
+        True
+        if args.use_local_store
+        else False
+        if args.ignore_local_store
+        else in_gha
+    )
 
     with tempfile.TemporaryDirectory() as tmpdir_str:
         tmpdir = Path(tmpdir_str)
         hw_path = tmpdir / "hardware-configuration.nix"
         hw_path.write_text(
+            '{ config, lib, modulesPath, ... }:\n'
             '{\n'
-            '  fileSystems."/" = { device = "/dev/null"; fsType = "ext4"; };\n'
+            '  imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];\n'
+            '  fileSystems."/" = { device = "/dev/null"; fsType = "btrfs"; options = [ "subvol=nixos" ]; };\n'
+            '  fileSystems."/boot" = { device = "/dev/null"; fsType = "vfat"; };\n'
             '  boot.kernelModules = [ "kvm-intel" ];\n'
+            '  hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;\n'
             '}\n',
             encoding="utf-8",
         )
@@ -242,34 +451,64 @@ def main() -> int:
         env["GIT_SSH_COMMAND"] = "/bin/false"
         env["NIXOS_HARDWARE_CONFIG"] = str(hw_path)
         env["NIXOS_HOSTNAME"] = "workstation"
+        env["NIXOS_MACHINE_ID"] = "none"
 
-        cmd = [
-            "nix",
-            "build",
-            "--dry-run",
-            "--impure",
+        override_args: list[str] = [
             "--override-input",
             "celluloid-src",
             f"path:{dummy_celluloid}",
-            "--no-write-lock-file",
-            f"{args.flake}#{args.attr}",
         ]
-        proc = subprocess.run(
-            cmd, env=env, capture_output=True, text=True, check=False
-        )
-        combined = "\n".join(part for part in (proc.stdout, proc.stderr) if part)
-        if proc.returncode != 0:
-            print(combined, file=sys.stderr)
-            return 1
+        for input_name, input_uri in args.override_input:
+            override_args.extend(["--override-input", input_name, input_uri])
 
-        drvs = parse_unbuilt_drvs(combined)
+        preloaded: dict[str, dict] | None = None
+        if use_local_store:
+            cmd = [
+                "nix",
+                "build",
+                "--dry-run",
+                "--impure",
+                *override_args,
+                "--no-write-lock-file",
+                f"{args.flake}#{args.attr}",
+            ]
+            proc = subprocess.run(
+                cmd, env=env, capture_output=True, text=True, check=False
+            )
+            combined = "\n".join(part for part in (proc.stdout, proc.stderr) if part)
+            if proc.returncode != 0:
+                print(combined, file=sys.stderr)
+                return 1
+            drvs = parse_unbuilt_drvs(combined)
+        else:
+            cmd = [
+                "nix",
+                "eval",
+                "--raw",
+                "--impure",
+                *override_args,
+                f"{args.flake}#{args.attr}.drvPath",
+            ]
+            proc = subprocess.run(
+                cmd, env=env, capture_output=True, text=True, check=False
+            )
+            if proc.returncode != 0:
+                combined = "\n".join(part for part in (proc.stdout, proc.stderr) if part)
+                print(combined, file=sys.stderr)
+                return 1
+            root_drv = proc.stdout.strip()
+            try:
+                drvs, preloaded = collect_uncached_drvs_remote(root_drv)
+            except RuntimeError as exc:
+                print(str(exc), file=sys.stderr)
+                return 1
+
         try:
-            local_filtered, blockers = classify_drvs(drvs)
+            local_filtered, blockers = classify_drvs(drvs, preloaded=preloaded)
         except RuntimeError as exc:
             print(str(exc), file=sys.stderr)
             return 1
 
-        in_gha = os.environ.get("GITHUB_ACTIONS") == "true"
         print(f"total_drvs={len(drvs)}")
         print(f"filtered_local={len(local_filtered)}")
         if local_filtered:
@@ -283,10 +522,10 @@ def main() -> int:
                 print("::endgroup::")
 
         print(f"upstream_blockers={len(blockers)}")
-        for name in blockers:
-            print(f"  BLOCKER: {name}")
+        for name, key in blockers:
+            print(f"  BLOCKER: {name} (/nix/store/{key})")
         if blockers and in_gha:
-            blocker_list = ", ".join(dict.fromkeys(blockers))
+            blocker_list = ", ".join(dict.fromkeys(name for name, _ in blockers))
             print(
                 f"::warning title=Upstream cache still building::"
                 f"{len(blockers)} upstream blocker(s) not yet on cache.nixos.org: {blocker_list}"

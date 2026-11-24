@@ -229,7 +229,8 @@ in
   };
 
   fonts = {
-    fontDir.enable = true;
+    # Do not enable fontDir.enable: it overrides programs.xwayland.defaultFontPath
+    # and forces uncached xwayland source rebuilds (Wayland/GTK/Qt/Electron apps use fontconfig).
     packages = with pkgs; [
       nerd-fonts.monaspace
       noto-fonts

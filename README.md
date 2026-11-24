@@ -1,28 +1,30 @@
 # Dotfiles
 
-Cấu hình NixOS Flake di động cho workstation chạy **Hyprland**, không hardcode hostname, UUID hay label ổ đĩa trong Git và giữ `/etc` immutable qua overlay.
+**English** | [Tiếng Việt](README.vi.md)
 
-## Cấu trúc
+Portable NixOS Flake configuration for a **Hyprland** workstation, with no hardcoded hostnames, UUIDs, or disk labels in Git, keeping `/etc` immutable via overlay.
 
-- `flake.nix`: Đọc cấu hình local lúc evaluate (`--impure`) từ `/etc/hostname` (hoặc `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix` và `/var/lib/nixos/<user>-password-hash`.
+## Structure
+
+- `flake.nix`: Reads local machine config during evaluation (`--impure`) from `/etc/hostname` (or `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix`, and `/var/lib/nixos/<user>-password-hash`.
 - `nixos/modules/`:
   - `base.nix`: Base OS, bootloader, network/VPN, Hyprland, `fcitx5`, `nh` wrapper.
-  - `desktop-configs.nix`: Cấu hình desktop (`hypr`, `ironbar`, `rofi`, `foot`, `satty`, `swaync`, `fcitx5`) và scripts.
-  - `user-packages.nix`: Gói GUI & CLI dev tools.
+  - `desktop-configs.nix`: Desktop configs (`hypr`, `ironbar`, `rofi`, `foot`, `satty`, `swaync`, `fcitx5`) and scripts.
+  - `user-packages.nix`: GUI & CLI dev tools.
   - `user-services.nix`: Systemd user services/targets.
-  - `external-apps.nix`: Quản lý app ngoài nixpkgs (`external-apps`).
+  - `external-apps.nix`: External app manager (`external-apps`).
 
-## Sử dụng
+## Usage
 
 ```bash
-# Áp dụng thay đổi (nh đã bọc sẵn --impure)
+# Apply changes (nh wrapper already passes --impure)
 nh os switch
 
-# Cập nhật và áp dụng
+# Update and apply
 git pull --ff-only && nh os switch
 ```
 
-## Cài máy mới
+## New Machine Setup
 
 ```bash
 sudo mkdir -p /mnt/.rw-etc/upper/nixos

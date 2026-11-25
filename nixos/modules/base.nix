@@ -241,6 +241,18 @@ in
     users = [ hostSpec.username ];
   };
   boot.kernelModules = [ "uinput" ];
+  # Ensure udev applies 99-lotus.rules ACL to an already-loaded /dev/uinput on live switch
+  systemd.services.fcitx5-lotus-uinput-acl = {
+    description = "Apply udev ACL for fcitx5-lotus on /dev/uinput";
+    after = [ "systemd-udevd.service" "systemd-modules-load.service" "userborn.service" ];
+    before = [ "fcitx5-lotus-server@${hostSpec.username}.service" ];
+    wantedBy = [ "fcitx5-lotus-server@${hostSpec.username}.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = "${config.systemd.package}/bin/udevadm trigger --action=change --subsystem-match=misc --sysname-match=uinput --settle";
+    };
+  };
 
   fonts = {
     # Do not enable fontDir.enable: it overrides programs.xwayland.defaultFontPath

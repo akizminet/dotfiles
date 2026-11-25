@@ -67,7 +67,10 @@ EOF
 in
 {
   # Boot & Swap
-  boot.loader.systemd-boot.enable = true;
+  boot.loader.systemd-boot = {
+    enable = true;
+    configurationLimit = 5;
+  };
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelPackages = pkgs.linuxPackages_latest;
   zramSwap.enable = true;
@@ -92,9 +95,14 @@ in
   programs.nh = {
     enable = true;
     flake = hostSpec.dotfilesDir;
+    clean = {
+      enable = true;
+      extraArgs = "--keep 3";
+    };
     package = pkgs.symlinkJoin {
       name = "nh-impure";
       paths = [ pkgs.nh ];
+      meta.mainProgram = "nh";
       postBuild = ''
         rm -f $out/bin/nh
         cp ${pkgs.writeShellScript "nh" ''
@@ -114,6 +122,8 @@ in
 
   # Networking & Time
   networking.hostName = hostSpec.hostName;
+  # Shared /etc/hosts entries across machines (per-machine entries live in /etc/nixos/local-hosts.nix)
+  networking.hosts = { };
   networking.networkmanager = {
     enable = true;
     plugins = [
@@ -223,10 +233,14 @@ in
         kdePackages.fcitx5-unikey
         kdePackages.fcitx5-configtool
         fcitx5-gtk
-        fcitx5-bamboo
       ];
     };
   };
+  services.fcitx5-lotus = {
+    enable = true;
+    users = [ hostSpec.username ];
+  };
+  boot.kernelModules = [ "uinput" ];
 
   fonts = {
     # Do not enable fontDir.enable: it overrides programs.xwayland.defaultFontPath

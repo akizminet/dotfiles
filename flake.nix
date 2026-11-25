@@ -9,9 +9,13 @@
     };
     akquick.url = "github:akizminet/akquick";
     akquick.inputs.nixpkgs.follows = "nixpkgs";
+    fcitx5-lotus = {
+      url = "github:LotusInputMethod/fcitx5-lotus";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, celluloid-src, akquick }:
+  outputs = { self, nixpkgs, celluloid-src, akquick, fcitx5-lotus }:
     let
       lib = nixpkgs.lib;
 
@@ -52,18 +56,24 @@
       ];
       hashedPasswordFile = if hasPasswordHash then passwordHashPath else null;
 
-      hardwareConfigCandidates = [
-        (builtins.getEnv "NIXOS_HARDWARE_CONFIG")
-        "/etc/nixos/hardware-configuration.nix"
-        "/var/mnt/nixos/.rw-etc/upper/nixos/hardware-configuration.nix"
-        "/var/mnt/nixos/etc/nixos/hardware-configuration.nix"
-        "/mnt/.rw-etc/upper/nixos/hardware-configuration.nix"
-        "/mnt/etc/nixos/hardware-configuration.nix"
-      ];
-      hardwareConfigPath = lib.findFirst
-        (p: p != "" && builtins.pathExists p)
-        null
-        hardwareConfigCandidates;
+      findLocalConfig = envVar: fileName:
+        let
+          candidates = [
+            (builtins.getEnv envVar)
+            "/etc/nixos/${fileName}"
+            "/var/mnt/nixos/.rw-etc/upper/nixos/${fileName}"
+            "/var/mnt/nixos/etc/nixos/${fileName}"
+            "/mnt/.rw-etc/upper/nixos/${fileName}"
+            "/mnt/etc/nixos/${fileName}"
+          ];
+        in
+        lib.findFirst
+          (p: p != "" && builtins.pathExists p)
+          null
+          candidates;
+
+      hardwareConfigPath = findLocalConfig "NIXOS_HARDWARE_CONFIG" "hardware-configuration.nix";
+      localHostsPath = findLocalConfig "NIXOS_LOCAL_HOSTS" "local-hosts.nix";
 
       mkSystem = targetHostName:
         let
@@ -79,12 +89,15 @@
             inherit self celluloid-src akquick hostSpec;
           };
           modules = [
+            fcitx5-lotus.nixosModules.fcitx5-lotus
             ./nixos/modules/base.nix
             ./nixos/modules/desktop-configs.nix
             ./nixos/modules/user-services.nix
             ./nixos/modules/user-packages.nix
             ./nixos/modules/external-apps.nix
-          ] ++ lib.optional (hardwareConfigPath != null) hardwareConfigPath;
+          ]
+          ++ lib.optional (hardwareConfigPath != null) hardwareConfigPath
+          ++ lib.optional (localHostsPath != null) localHostsPath;
         };
     in
     {

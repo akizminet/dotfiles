@@ -76,14 +76,14 @@ jobs:
           import json
           with open("flake.lock", "r", encoding="utf-8") as fh:
               nodes = json.load(fh).get("nodes", {})
-          for name in ("nixpkgs", "akquick"):
+          for name in ("nixpkgs", "akquick", "fcitx5-lotus"):
               rev = nodes.get(name, {}).get("locked", {}).get("rev", "unknown")[:12]
               print(f"{name}={rev}")
           '
           }
 
           OLD_REVS="$(read_revs)"
-          nix flake update nixpkgs akquick
+          nix flake update nixpkgs akquick fcitx5-lotus
           NEW_REVS="$(read_revs)"
 
           if git diff --quiet flake.lock; then
@@ -96,7 +96,7 @@ jobs:
           old = dict(line.split("=", 1) for line in sys.argv[1].splitlines() if "=" in line)
           new = dict(line.split("=", 1) for line in sys.argv[2].splitlines() if "=" in line)
           lines = []
-          for k in ("nixpkgs", "akquick"):
+          for k in ("nixpkgs", "akquick", "fcitx5-lotus"):
               old_rev = old.get(k, "?")
               new_rev = new.get(k, "?")
               if old_rev != new_rev:

@@ -6,7 +6,7 @@ Portable NixOS Flake configuration for a **Hyprland** workstation, with no hardc
 
 ## Structure
 
-- `flake.nix`: Reads local machine config during evaluation (`--impure`) from `/etc/hostname` (or `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix`, and `/var/lib/nixos/<user>-password-hash`.
+- `flake.nix`: Reads local machine config during evaluation (`--impure`) from `/etc/hostname` (or `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix`, optional `/etc/nixos/local-hosts.nix`, and `/var/lib/nixos/<user>-password-hash`.
 - `nixos/modules/`:
   - `base.nix`: Base OS, bootloader, network/VPN, Hyprland, `fcitx5`, `nh` wrapper.
   - `desktop-configs.nix`: Desktop configs (`hypr`, `ironbar`, `rofi`, `foot`, `satty`, `swaync`, `fcitx5`) and scripts.

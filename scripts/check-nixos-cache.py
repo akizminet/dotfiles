@@ -24,6 +24,7 @@ LOCAL_PREFIXES = (
     "firefox-bin-",
     "celluloid-",
     "akquick-",
+    "fcitx5-lotus-",
     "nm-openvpn-sso",
 )
 LOCAL_SUFFIXES = ("-modules-shrunk",)

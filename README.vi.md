@@ -6,7 +6,7 @@ Cấu hình NixOS Flake di động cho workstation chạy **Hyprland**, không h
 
 ## Cấu trúc
 
-- `flake.nix`: Đọc cấu hình local lúc evaluate (`--impure`) từ `/etc/hostname` (hoặc `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix` và `/var/lib/nixos/<user>-password-hash`.
+- `flake.nix`: Đọc cấu hình local lúc evaluate (`--impure`) từ `/etc/hostname` (hoặc `NIXOS_HOSTNAME`), `/etc/machine-id`, `/etc/nixos/hardware-configuration.nix`, `/etc/nixos/local-hosts.nix` (tuỳ chọn) và `/var/lib/nixos/<user>-password-hash`.
 - `nixos/modules/`:
   - `base.nix`: Base OS, bootloader, network/VPN, Hyprland, `fcitx5`, `nh` wrapper.
   - `desktop-configs.nix`: Cấu hình desktop (`hypr`, `ironbar`, `rofi`, `foot`, `satty`, `swaync`, `fcitx5`) và scripts.
